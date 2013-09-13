@@ -1,0 +1,63 @@
+Goal
+The goal of this project was to create an extension of the traditional calendar/agenda
+that used a scheduling algorithm to increase the ease and effectiveness of daily
+scheduling. Most calendars are based around manual entry - when a student enters a task,
+it is scheduled unintelligently. There has been enormous success from consumer planning
+tools which are simply glorified task lists.
+
+A user provides two things thing to my software: a list of tasks with associated work hours to complete them and their due dates and their preferred daily work hours. It schedules tasks with due dates around daily obligations (classes, appointments, lunch)
+in an attempt to create the most efficient schedule. The user can choose between
+the least work per day or the earliest completion possible. The algorithm then auto-
+magically lays out the schedule in the calendar.
+
+Overall, the pain of scheduling is now relieved. The student spends a few minutes entering
+all of their assignments and obligations, and they have a schedule that is guaranteed to
+get everything done (the program notifies the user if they need to work more hours per
+day to accomplish their tasks). They can take this schedule on the go with their preferred
+reminder systems, through text or traditional calendar products on their phones or the web
+(e.g. Google Calendar).
+
+Design
+The structure of my program follows the model/view/controller method of developing
+graphical software. My model was the most important and difficult algorithmically to
+handle. Extra features like saving, export to iCal, and sending a text were all based
+on widely available documentation. That is, the core components of the software were
+the hardest to implement.
+
+It was not at first obvious how to split single tasks up between multiple days before a
+due date. From the immensely useful datetime library, I was able to use a timedelta
+object to find the distance between today and the due date. However, storing the tasks
+and the hours it took to complete them was not straightforward. My solution ended up
+being to keep track of two lists that were as long as the furthest task in the future
+starting from the current day (today). Then I took tasks as the user specified them
+in the TaskList object and, one by one, split up the hours it took to complete each task
+and added a tuple containing the task and the time allotted to that task for the day
+to the list for that specific day. I did this first for the FixedTasks (which obviously
+took priority in terms of time constraints) and then for Assignments (standard tasks).
+I did this for each day until the last day of user assigned tasks. Finally, automatically
+saving and loading this data through the pickle module in my init() method was
+straightforward enough.
+
+My view took the agenda provided by the TaskList class and simply drew it into the
+calendar I generated. Drawing the graphical calendar was made simpler by the datetime
+class, which provided a 2D list of day values given a specific calendar and month.
+Most of the complexity of the interface came from handling different cases such as
+months with irregular row counts and determining the correct date object by simply
+providing canvas x and y values through events. I chose a retained graphics model for
+my code because I prefer its efficiency and cleanliness. All of the calendar elements
+for each section of the interface are kept in a list and then removed from the canvas
+and replaced with new elements when redrawing. There is no code providing "timerFired"
+functionality. The most difficult aspect of the interface was implementing a drag-and-
+drop system for rescheduling tasks. I achieved this by checking if the user clicked
+on an agenda item in the mousePressed event. If so, it would not run the rest of the
+mousePressed code and wait until the user released the mouse to attempt to run the other
+code relating to selecting days on the calendar. Then, in my mouseMotion event, I used
+a series of helper functions to delete the text I had generated under the mouse when it
+was moving and redraw it in the new position. Therefore, if the user is simply hovering
+somewhere without moving the mouse but has not let go of the button, there is only
+static text under the mouse. I found this design choice to be more efficient. Finally,
+when the mouse was released, if the task was "dropped" somewhere on the calendar, the
+date was parsed and the user was warned if the task could not be completed on the assigned
+due date or if they attempted to assign it to the past. If the task was not placed some-where on the calendar, nothing occurred. I found that this drag-and-drop was useful not
+only to reassign tasks, but to reveal the whole name of the task if it was cut off by
+space in the interface.
