@@ -53,7 +53,7 @@ exception DuplicateTask
 (* names are unique *)
 let add_task desc tsk =
   if Map.mem !tasks desc then raise DuplicateTask else
-  tasks := Map.add !tasks desc tsk
+  tasks := Map.add !tasks ~key:desc ~data:tsk
 
 (* todo: let it be removed by first few unique chars *)
 let remove_task desc =
@@ -62,7 +62,7 @@ let remove_task desc =
 let add_hours desc hrs =
   match Map.find !tasks desc with
   | None -> ()
-  | Some x -> let add' v = tasks := Map.add !tasks desc v in
+  | Some x -> let add' v = tasks := Map.add !tasks ~key:desc ~data:v in
     (match x with
     | Fixed _ | NullTask -> () (* cannot add hours to fixed/nulltask *)
     | Homework_incomplete (h, hd, d) ->
@@ -89,7 +89,7 @@ let latest ~key:desc ~data:task_a (d_latest,t_latest) =
   | (None, Some _) -> (d_latest,t_latest)
   | (Some a, Some b) -> if a < b then (d_latest,t_latest) else (desc,task_a)
 
-let latest_task = Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest
+let get_latest_task = (fun () -> Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest)
 
 (* dropped: latest due date *)
 
