@@ -1,1 +1,1 @@
-ocamlbuild -use-ocamlfind -pkg core main.native
+corebuild main.native
