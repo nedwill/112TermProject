@@ -1,4 +1,4 @@
-(* Transcribing this projcect into OCaml to write it
+(* Transcribing this project into OCaml to write it
  * more cleanly and uncover bugs in the original source. *)
 
 open Core.Std
@@ -7,14 +7,10 @@ type description = string
 type hours = Time.Span.t
 type hours_done = Time.Span.t
 type due = Date.t
-
 type start_time = Time.t
-
 type end_time = Time.t
 
-(* one bool for every day of the week starting monday :) *)
 type recurring = bool * bool * bool * bool * bool * bool * bool
-
 type task =
   | Fixed of start_time * end_time * recurring
   | Homework_incomplete of hours * hours_done * due
@@ -89,7 +85,8 @@ let latest ~key:desc ~data:task_a (d_latest,t_latest) =
   | (None, Some _) -> (d_latest,t_latest)
   | (Some a, Some b) -> if a < b then (d_latest,t_latest) else (desc,task_a)
 
-let get_latest_task = (fun () -> Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest)
+let get_latest_task : unit -> (string * task) =
+  (fun () -> Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest)
 
 (* dropped: latest due date *)
 
