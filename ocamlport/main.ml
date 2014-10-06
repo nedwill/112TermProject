@@ -16,49 +16,84 @@ type end_time = Time.t
 (* one bool for every day of the week starting monday :) *)
 type recurring = bool * bool * bool * bool * bool * bool * bool
 
+(* use map: description -> task *)
+
 type task =
-  | Fixed of description * start_time * end_time * recurring
-  | Homework_incomplete of description * hours * hours_done * due
-  | Homework_complete of description * hours_done * due
+  | Fixed of start_time * end_time * recurring
+  | Homework_incomplete of hours * hours_done * due
+  | Homework_complete of hours_done * due
+  | NullTask
 
 let recurring_to_string (m,t,w,u,f,s,n) =
   let day_list = [m;t;w;u;f;s;n] in
-  let day_names = ["Monday"; "Tuesday"; "Wednesday"; "Thursday"; "Friday"; "Saturday"; "Sunday"] in
+  let day_names = ["Monday"; "Tuesday"; "Wednesday"; "Thursday";
+    "Friday"; "Saturday"; "Sunday"] in
   let zipped = List.zip_exn day_list day_names in
-  let filtered = List.filter zipped (fun (b,_) -> b) in
-  let mapped = List.map filtered (fun (_,d) -> d) in
+  let filtered = List.filter zipped ~f:(fun (b,_) -> b) in
+  let mapped = List.map filtered ~f:(fun (_,d) -> d) in
   String.concat ~sep:" " mapped
 
 let task_to_string = function
-  | Fixed (desc, start_t, end_t, recr) ->
+  | Fixed (start_t, end_t, recr) ->
       let rec_s = recurring_to_string recr in
-      desc ^ ", Start time: " ^ Time.to_string start_t ^ ", End time: " ^ Time.to_string end_t ^ ", Recurring days: " ^ rec_s
-  | Homework_incomplete (desc, hrs, hrsdn, due) ->
-      desc ^ ", Time left: " ^ Time.Span.to_short_string (sub_span hrs hrsdn) ^ ", Days left: " ^ string_of_int (Date.diff due (Date.today()))
-  | Homework_complete (desc, hrsdn, due) ->
-      desc ^ " (The due date for this task, " ^ Date.to_string due ^ ", has elapsed."
+      ", Start time: " ^ Time.to_string start_t ^ ", End time: "
+        ^ Time.to_string end_t ^ ", Recurring days: " ^ rec_s
+  | Homework_incomplete (hrs, hrsdn, due) ->
+      ", Time left: " ^ Time.Span.to_short_string (sub_span hrs hrsdn)
+        ^ ", Days left: " ^ string_of_int (Date.diff due (Date.today()))
+  | Homework_complete (_, due) ->
+      " (The due date for this task, " ^ Date.to_string due
+        ^ ", has elapsed."
+  | NullTask -> "Null task. You shouldn't see this."
 
-let tasks : task list ref = ref []
-
-let get_description = function
-  | Fixed (d,_,_,_) -> d
-  | Homework_incomplete (d,_,_,_) -> d
-  | Homework_complete (d,_,_) -> d
+let tasks : (string * task * 'a) Map.t ref = ref String.Map.empty
 
 let is_duplicate tsk =
-  List.contains_dup (List.map (tsk::!tasks) get_description)
+  List.contains_dup (List.map (tsk::!tasks) ~f:get_description)
 
 exception DuplicateTask
 
 (* names are unique *)
-let add_task tsk =
-  if is_duplicate tsk then raise DuplicateTask else
-  tasks := tsk::!tasks
+let add_task desc tsk =
+  if mem !tasks desc then raise DuplicateTask else
+  tasks := !tasks.add desc tsks
 
 (* todo: let it be removed by first few unique chars *)
 let remove_task desc =
-  tasks := List.filter !tasks (fun s -> get_description s <> desc)
+  tasks := String.Map.remove !tasks desc
+
+let add_hours desc hrs =
+  match String.Map.find !tasks desc with
+  | None -> ()
+  | Some x -> let add' v = tasks := String.Map.add !tasks desc v in
+    (match x with
+    | Fixed (s, e, r) -> () (* cannot add hours to fixed *)
+    | Homework_incomplete (h, hd, d) ->
+      let hd' = hd+hrs in if hd' >= h then () else add' (h, hd', d)
+    | Homework_complete (hd, d) ->
+      let hd' = hd+hrs in if hd' >= h then () else add' (h, hd', d)
+    )
+
+let get_due = function
+  | Fixed _ -> None
+  | Homework_incomplete (_, _, d) -> Some d
+  | Homework_complete (_, d) -> Some d
+  | NullTask -> None
+
+let latest desc task_a (d_latest,t_latest) =
+  match (get_due task_a, get_due t_latest) with
+  | (None, None) -> (d_latest,t_latest)
+  | (Some _, None) -> (desc,task_a)
+  | (None, Some _) -> (d_latest,t_latest)
+  | (Some a, Some b) -> if a < b then (d_latest,t_latest) else (desc,task_a)
+
+let latest_task = String.Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest
 
 (* dropped: latest due date *)
 
 (* next: addhours *)
+
+(*
+allocate hours available for each day until latest task in list
+
+*)
