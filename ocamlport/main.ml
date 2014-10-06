@@ -7,7 +7,6 @@ type description = string
 type hours = Time.Span.t
 type hours_done = Time.Span.t
 type due = Date.t
-let sub_span = Core.Span.(-)
 
 type start_time = Time.t
 
@@ -16,13 +15,14 @@ type end_time = Time.t
 (* one bool for every day of the week starting monday :) *)
 type recurring = bool * bool * bool * bool * bool * bool * bool
 
-(* use map: description -> task *)
-
 type task =
   | Fixed of start_time * end_time * recurring
   | Homework_incomplete of hours * hours_done * due
   | Homework_complete of hours_done * due
   | NullTask
+
+let sub_span = Core.Span.(-)
+let add_span = Core.Span.(+)
 
 let recurring_to_string (m,t,w,u,f,s,n) =
   let day_list = [m;t;w;u;f;s;n] in
@@ -46,32 +46,34 @@ let task_to_string = function
         ^ ", has elapsed."
   | NullTask -> "Null task. You shouldn't see this."
 
-let tasks : (string * task * 'a) Map.t ref = ref String.Map.empty
-
-let is_duplicate tsk =
-  List.contains_dup (List.map (tsk::!tasks) ~f:get_description)
+let tasks = ref String.Map.empty
 
 exception DuplicateTask
 
 (* names are unique *)
 let add_task desc tsk =
-  if mem !tasks desc then raise DuplicateTask else
-  tasks := !tasks.add desc tsks
+  if Map.mem !tasks desc then raise DuplicateTask else
+  tasks := Map.add !tasks desc tsk
 
 (* todo: let it be removed by first few unique chars *)
 let remove_task desc =
-  tasks := String.Map.remove !tasks desc
+  tasks := Map.remove !tasks desc
 
 let add_hours desc hrs =
-  match String.Map.find !tasks desc with
+  match Map.find !tasks desc with
   | None -> ()
-  | Some x -> let add' v = tasks := String.Map.add !tasks desc v in
+  | Some x -> let add' v = tasks := Map.add !tasks desc v in
     (match x with
-    | Fixed (s, e, r) -> () (* cannot add hours to fixed *)
+    | Fixed _ | NullTask -> () (* cannot add hours to fixed/nulltask *)
     | Homework_incomplete (h, hd, d) ->
-      let hd' = hd+hrs in if hd' >= h then () else add' (h, hd', d)
+      let hd' = add_span hd hrs in
+      if hd' >= h then
+        add' (Homework_complete (hd', d)) (* becomes complete *)
+      else
+        add' (Homework_incomplete (h, hd', d))
     | Homework_complete (hd, d) ->
-      let hd' = hd+hrs in if hd' >= h then () else add' (h, hd', d)
+      let hd' = add_span hd hrs in
+      add' (Homework_complete (hd', d))
     )
 
 let get_due = function
@@ -80,14 +82,14 @@ let get_due = function
   | Homework_complete (_, d) -> Some d
   | NullTask -> None
 
-let latest desc task_a (d_latest,t_latest) =
+let latest ~key:desc ~data:task_a (d_latest,t_latest) =
   match (get_due task_a, get_due t_latest) with
   | (None, None) -> (d_latest,t_latest)
   | (Some _, None) -> (desc,task_a)
   | (None, Some _) -> (d_latest,t_latest)
   | (Some a, Some b) -> if a < b then (d_latest,t_latest) else (desc,task_a)
 
-let latest_task = String.Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest
+let latest_task = Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest
 
 (* dropped: latest due date *)
 
