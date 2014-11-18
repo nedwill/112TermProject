@@ -56,7 +56,7 @@ exception DuplicateTask
 (* names are unique *)
 let add_task desc tsk =
   if mem !tasks desc then raise DuplicateTask else
-  tasks := !tasks.add desc tsks
+  tasks := !tasks.add desc tsk
 
 (* todo: let it be removed by first few unique chars *)
 let remove_task desc =
@@ -89,11 +89,26 @@ let latest desc task_a (d_latest,t_latest) =
 
 let latest_task = String.Map.fold !tasks ~init:("no tasks", NullTask) ~f:latest
 
-(* dropped: latest due date *)
+exception AddHoursToFixed
 
-(* next: addhours *)
+let add_hours_to_task hours = function
+  | Fixed _ -> raise AddHoursToFixed
+  | Homework_incomplete (hours_i, hours_done, due) ->
+    Homework_incomplete (hours_i+hours, hours_done, due)
+  | Homework_complete (hours_done, due) -> Homework_complete (hours_done, due)
+  | NullTask -> NullTask
+
+let add_hours_by_desc description hours =
+  let old_task = String.Map.find !tasks description in
+  let new_task = add_hours_to_task hours old_task in
+  tasks != String.Map.add !tasks description new_task
+
+(*
+  next: calcAgenda
+*)
+
+(* dropped: latest due date *)
 
 (*
 allocate hours available for each day until latest task in list
-
 *)
