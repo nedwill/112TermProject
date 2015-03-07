@@ -15,6 +15,7 @@ import tempfile
 import urllib
 import urllib2
 #import pdb
+import json, sys #for fuzzing
 from icalendar import Calendar, Event
 
 class Task(object): #recurring attribute here?
@@ -1045,8 +1046,15 @@ class CalendarPlanner(object):
         self.cal.draw(self)
         self.saveData()
 
-    #@classmethod
-    def testAgenda(self):
+    #pass data using json
+    def testAgenda(self, data):
+        data = json.loads(data)
+        tasks = {}
+        for task in data:
+            if task["type"] == "fixed":
+                tasks.add(FixedTask(task["name"], datetime.datetime(*task["time1"]), datetime.datetime(*task["time2"])))
+            elif task["type"] == "task":
+                pass #continue here
         tasks = [FixedTask("meeting",datetime.datetime(2012,11,28,17),
             datetime.datetime(2012,11,28,18)),
                 Task("C@CM",1,0,datetime.date.today()),Task("ECE study",
@@ -1057,6 +1065,7 @@ class CalendarPlanner(object):
         for task in tasks:
             myTasks.add(task)
         self.tasks = myTasks
+        self.createAgenda()
 
     def previousMonth(self):
         if self.month > 1:
@@ -1214,7 +1223,16 @@ class CalendarPlanner(object):
         self.root.mainloop()
         self.saveData()
 
-app = CalendarPlanner(1000,700) #1000x700 canvas, default is 900x600
-#app = CalendarPlanner()
-#app.testAgenda() #run this to fill with test data
-app.run()
+import afl
+afl.start()
+if len(sys.argv) != 2:
+    print "need an arg"
+    exit()
+app = CalendarPlanner()
+data = open(sys.argv[1],'r').read()
+app.testAgenda(data)
+
+#app = CalendarPlanner(1000,700) #1000x700 canvas, default is 900x600
+##app = CalendarPlanner()
+##app.testAgenda() #run this to fill with test data
+#app.run()
