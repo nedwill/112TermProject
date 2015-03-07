@@ -44,7 +44,7 @@ class FixedTask(Task):
         new = " " + str(startTime.hour) + ":" + "%02d" % startTime.minute \
         + "-" + str(endTime.hour) + ":" +  "%02d" % endTime.minute
         description += new
-        hours = ((endTime - startTime).seconds)/3600 #use actual timedelta 
+        hours = ((endTime - startTime).seconds)/3600 #use actual timedelta
                                                      #to find hours
         due = startTime.date()
         hoursDone = 0 #can't have hours completed in advance on a fixed event
@@ -69,8 +69,7 @@ class TaskList(object):
     def __init__(self):
         self.fixed = [] #fixed tasks
         self.assignments = [] #assignments with due dates
-        self.latestTask = datetime.date.today() #initialize last task date to
-                                                #today
+        self.latestTask = datetime.date.today() #initialize last task date to today
         self.descriptionList = []
         #due dates written as month,day,year
         #calculate distance between two days
@@ -84,8 +83,7 @@ class TaskList(object):
             descriptionList += check.description
         for check in self.assignments:
             descriptionList += check.description
-        if task.description in descriptionList: #make sure we don't have
-                                                 #a duplicate assignment name
+        if task.description in descriptionList: #make sure we don't have a duplicate assignment name
             #print "duped :("
             return
         #else:
@@ -128,119 +126,94 @@ class TaskList(object):
                     self.remove(description)
                 return task
 
-    def calcAgenda(self,maxHours,maxDays=False,workDays=[0,1,2,3,4,5,6],workToday=True): #maxDays maximizes work in
-                             #given time at expense of easy/time efficiency
-        #print (self.latestTask - startDay).days
-        #print self.assignments
-        startDay = datetime.date.today()
-        #print self.latestTask
-        if self.latestTask == startDay:
-            planTasks = [[]]
-            planHours = [0]
+    def calcAgenda(self,maxHours,maxDays=False,workDays=[0,1,2,3,4,5,6],workToday=True):
+        """
+        maxDays maximizes work in given time at expense of easy/time efficiency
+        """
+        start_day = datetime.date.today()
+        if self.latestTask == start_day:
+            plan_tasks = [[]]
+            plan_hours = [0]
         else:
-            planTasks = [[] for day in xrange((self.latestTask -\
-             startDay).days+1)] #[]*days until last assigned task
-            planHours = [0]*((self.latestTask - startDay).days+1)
-            self.assignments = sorted(self.assignments,
-             key=lambda task: task.due) # sort assignments by due date --
-                                        # earliest completed first
-            #self.fixed = sorted(self.fixed, key=lambda task: task.due)
-            # ^ irrelevant for fixed tasks
+            plan_tasks = [[] for day in xrange((self.latestTask - start_day).days+1)] #[]*days until last assigned task
+            plan_hours = [0]*((self.latestTask - start_day).days+1)
+            self.assignments = sorted(self.assignments, key=lambda task: task.due)
         for task in self.fixed:
-            daysAway = (task.due - startDay).days
-            #index is days away from today
+            days_away = (task.due - start_day).days
             if len(task.recurring) > 0:
-                for i in xrange(daysAway+1):
+                for i in xrange(days_away+1):
                     dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
                     if dayOfWeek not in task.recurring:
                         continue
-                    due = startDay + datetime.timedelta(i)
+                    due = start_day + datetime.timedelta(i)
                     startHour = datetime.time(task.startTime.hour)
                     endHour = datetime.time(task.endTime.hour)
                     startTime = datetime.datetime.combine(due,startHour)
                     endTime = datetime.datetime.combine(due,endHour)
-                    #new = " " + str(startTime.hour) + ":" + "%02d" %
-                    #startTime.minute + "-" + str(endTime.hour) + ":" + 
-                    #\"%02d" % endTime.minute
-                    choplength = len(str(task.startTime.hour) + \
-                    str(task.endTime.hour)) + 8 #4 extra chars #find length
-                                                #to chop before recalling
-                                                #constructor
-                    newtask = FixedTask(task.description[:-choplength],
-                        startTime,endTime,True)
-                    if newtask.hours + planHours[i] <= maxHours:
-                        planHours[i] += newtask.hours
-                        planTasks[i] += [(newtask,newtask.hours)] #add tuple
-                        #of task and hours allotted for that day
+                    #4 extra chars, find length to chop before recalling constructor
+                    choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
+                    newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
+                    if newtask.hours + plan_hours[i] <= maxHours:
+                        plan_hours[i] += newtask.hours
+                        plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
                     else:
                         return None
             else:
-                if task.hours + planHours[daysAway] <= maxHours:
-                    planHours[daysAway] += task.hours
-                    planTasks[daysAway] += [(task,task.hours)] #add tuple of
-                    #task and hours allotted for that day
+                if task.hours + plan_hours[days_away] <= maxHours:
+                    plan_hours[days_away] += task.hours
+                    plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
                 else:
                     return None
 
-                #workdays date.weekday()
-
-        for i in xrange(len(self.assignments)): #cycle by index so we can
-                                      #check if we're on the last element
+        #cycle by index so we can check if we're on the last element
+        for i in xrange(len(self.assignments)):
             task = self.assignments[i]
             print task.description
             if task.due < datetime.date.today(): continue
-            daysAway = (task.due - startDay).days #- 1 #index is days #-1 to finish a day in advance
+            days_away = (task.due - start_day).days #- 1 #index is days #-1 to finish a day in advance
                                                              #away from today
             hoursDone = task.hoursDone
-            for day in xrange(daysAway+1):
+            for day in xrange(days_away+1):
                 hoursLeft = task.hours - hoursDone
                 if hoursLeft == 0:
                     continue
                 if day == 0 and workToday == False: continue
                 dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(day))
                 if dayOfWeek not in workDays:
-                    if day == daysAway and hoursLeft != 0:
+                    if day == days_away and hoursLeft != 0:
                         return None
                     else:
                         continue
-                daysLeft = (daysAway - day)
+                daysLeft = (days_away - day)
                 weeksLeft = (daysLeft/7)
-                #print daysLeft,weeksLeft
-                #daysLeft -= weeksLeft*(7-len(workDays)) #account for non-working days
                 workdaysremaining = 0
                 for checkday in xrange(daysLeft):
                     if (dayOfWeek + checkday) % 7 in workDays:
                         workdaysremaining += 1
-                #print workdaysremaining
                 if workdaysremaining == 0: return None
                 if workdaysremaining == 1:
-                    #print "last chance"
                     hoursPerDay = hoursLeft
                 elif (i == (len(self.assignments) - 1) and maxDays == True):
-                    #print "maxed"
-                    hoursPerDay = min(maxHours - planHours[day],hoursLeft)
+                    hoursPerDay = min(maxHours - plan_hours[day],hoursLeft)
                 else:
-                    #print "divided " + str(hoursLeft) + " " + str(workdaysremaining)#str(maxHours - planHours[day]) + " " + str(int(math.ceil(float(hoursLeft)/daysLeft)))
-                    hoursPerDay = min(maxHours - planHours[day],int(math.ceil(float(hoursLeft)/(workdaysremaining))))
-                #print task.description,task.hours,hoursDone,hoursLeft,hoursPerDay
+                    hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdaysremaining))))
                 if hoursPerDay == 0: continue
-                if hoursPerDay + planHours[day] <= maxHours:
+                if hoursPerDay + plan_hours[day] <= maxHours:
                     hoursDone += hoursPerDay
-                    planHours[day] += hoursPerDay
-                    planTasks[day] += [(task,hoursPerDay)]
+                    plan_hours[day] += hoursPerDay
+                    plan_tasks[day] += [(task,hoursPerDay)]
                     #add tuple of task and hours allotted for that day
-                elif day == daysAway:
+                elif day == days_away:
                     # if there are no days left, we can't
                     # complete this assignment
                     return None
-        #print planHours
-        return planTasks
+        #print plan_hours
+        return plan_tasks
 
 class GraphicsElement(object): #basic graphical element
     def __init__(self,canvas,width,height):
         self.canvas = canvas #element must know how to access its canvas
-        self.width = width #element must know its canvas
-                           #size to position itself
+        self.width = width #element must know its canvas size to position itself
         self.height = height
         self.elements = [] #keep track of canvas elements to clear
 
@@ -248,8 +221,7 @@ class GraphicsElement(object): #basic graphical element
                            #associated with each GraphicsElement
         self.elements += [element]
 
-    def clear(self): #use the list of elements for this GraphicsElement to
-                     #clear only this object from the canvas
+    def clear(self): #use the list of elements for this GraphicsElement to clear only this object from the canvas
         for element in self.elements: #most basic
             self.canvas.delete(element)
 
