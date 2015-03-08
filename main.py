@@ -76,19 +76,13 @@ class TaskList(object):
         #calculate distance between two days
 
     def add(self,task):
-        #print self.descriptionList
         descriptionList = []
-        #print task
-        #print task.description,task.due
         for check in self.fixed:
             descriptionList += check.description
         for check in self.assignments:
             descriptionList += check.description
         if task.description in descriptionList: #make sure we don't have a duplicate assignment name
-            #print "duped :("
             return
-        #else:
-        #    self.descriptionList += [task.description]
         if isinstance(task, FixedTask):
             self.fixed += [task]
             #print "Added fixed."
@@ -100,22 +94,16 @@ class TaskList(object):
     def remove(self,description):
         for task in self.fixed: #find, remove, and return task from description
             if task.description[:len(description)] == description:
-            #[:len(description)] allows us to quickly remove tasks by first
-            #few letters
                 self.fixed.remove(task)
-                #self.descriptionList.remove(task.description)
                 return task
         for task in self.assignments:
             if task.description[:len(description)] == description:
                 self.assignments.remove(task)
-                #self.descriptionList.remove(task.description)
                 return task
 
     def addHours(self,description,hours):
         for task in self.fixed: #find, remove, and return task from description
             if task.description[:len(description)] == description:
-            #[:len(description)] allows us to quickly remove tasks by first
-            #few letters
                 task.hoursDone += hours
                 if task.hoursDone >= task.hours:
                     self.remove(description)
@@ -141,6 +129,9 @@ class TaskList(object):
             self.assignments = sorted(self.assignments, key=lambda task: task.due)
         for task in self.fixed:
             days_away = (task.due - start_day).days
+            if days_away < 0:
+                print "warning: task `{}' is in the past, skipping".format(task.description)
+                continue
             if len(task.recurring) > 0:
                 for i in xrange(days_away+1):
                     dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
@@ -169,7 +160,6 @@ class TaskList(object):
         #cycle by index so we can check if we're on the last element
         for i in xrange(len(self.assignments)):
             task = self.assignments[i]
-            print task.description
             if task.due < datetime.date.today(): continue
             days_away = (task.due - start_day).days #- 1 #index is days #-1 to finish a day in advance
                                                              #away from today
@@ -1047,23 +1037,32 @@ class CalendarPlanner(object):
         self.saveData()
 
     #pass data using json
+    #need to support recurring tasks
     def testAgenda(self, data):
-        data = json.loads(data)
-        tasks = {}
-        for task in data:
-            if task["type"] == "fixed":
-                tasks.add(FixedTask(task["name"], datetime.datetime(*task["time1"]), datetime.datetime(*task["time2"])))
-            elif task["type"] == "task":
-                pass #continue here
-        tasks = [FixedTask("meeting",datetime.datetime(2012,11,28,17),
-            datetime.datetime(2012,11,28,18)),
-                Task("C@CM",1,0,datetime.date.today()),Task("ECE study",
-                    5,0,datetime.date(2012,11,25)),
-                Task("Calc WebAssign",2,0,datetime.date(2012,11,28)),
-                Task("CS project",25,0,datetime.date(2012,12,03))]
-        myTasks = TaskList()
-        for task in tasks:
-            myTasks.add(task)
+        try: #bugs in loading data aren't interesting
+            data = json.loads(data)
+            tasks = set()
+            for task in data:
+                try:
+                    if task["type"] == "fixed":
+                        tasks.add(FixedTask(task["name"], datetime.datetime(*task["time1"]), datetime.datetime(*task["time2"])))
+                    elif task["type"] == "task":
+                        tasks.add(Task(task["name"], task["hours"], task["hours_done"], datetime.date(*task["due"])))
+                except:
+                    continue
+            """
+            tasks = [FixedTask("meeting",datetime.datetime(2012,11,28,17),
+                datetime.datetime(2012,11,28,18)),
+                    Task("C@CM",1,0,datetime.date.today()),Task("ECE study",
+                        5,0,datetime.date(2012,11,25)),
+                    Task("Calc WebAssign",2,0,datetime.date(2012,11,28)),
+                    Task("CS project",25,0,datetime.date(2012,12,03))]
+            """
+            myTasks = TaskList()
+            for task in tasks:
+                myTasks.add(task)
+        except:
+            exit()
         self.tasks = myTasks
         self.createAgenda()
 
