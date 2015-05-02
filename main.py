@@ -2,20 +2,14 @@
 #Andrew: edwillia
 #Recitation: Section F
 
-from Tkinter import *
+from Tkinter import Tk, FALSE, Canvas, N, NE, Button, NW
 import datetime
 import calendar
 import math
 import tkSimpleDialog
 import tkMessageBox
-import tkFileDialog
 import pickle
 import os
-import tempfile
-import urllib
-import urllib2
-#import pdb
-from icalendar import Calendar, Event
 
 class Task(object): #recurring attribute here?
     def __init__(self,description,hours,hoursDone,due):
@@ -24,7 +18,7 @@ class Task(object): #recurring attribute here?
         self.hoursDone = hoursDone
         self.due = due #date object with relevant info
         #figure out recurring behavior (how do we know when to readd after
-            #checking it off?)
+        #checking it off?)
 
     def __str__(self): #used to make ical
         return str(self.due.year) + str(self.due.month) + str(self.due.day)
@@ -37,15 +31,16 @@ class Task(object): #recurring attribute here?
 class Assignment(Task): pass #same as Task?
 
 class FixedTask(Task):
-    def __init__(self,description,startTime,endTime,recurring=[]):
-        self.startTime = startTime #this should be dealt with using time
-                                   #objects -- done in make iCal as needed
+    def __init__(self,description,startTime,endTime,recurring=None):
+        #this should be dealt with using time objects
+        #done in make iCal as needed
+        self.startTime = startTime
         self.endTime = endTime
         new = " " + str(startTime.hour) + ":" + "%02d" % startTime.minute \
         + "-" + str(endTime.hour) + ":" +  "%02d" % endTime.minute
         description += new
-        hours = ((endTime - startTime).seconds)/3600 #use actual timedelta
-                                                     #to find hours
+        #use actual timedelta to find hours
+        hours = ((endTime - startTime).seconds)/3600
         due = startTime.date()
         hoursDone = 0 #can't have hours completed in advance on a fixed event
         self.recurring = recurring
@@ -99,8 +94,6 @@ class TaskList(object):
     def remove(self,description):
         for task in self.fixed: #find, remove, and return task from description
             if task.description[:len(description)] == description:
-            #[:len(description)] allows us to quickly remove tasks by first
-            #few letters
                 self.fixed.remove(task)
                 #self.descriptionList.remove(task.description)
                 return task
@@ -113,8 +106,6 @@ class TaskList(object):
     def addHours(self,description,hours):
         for task in self.fixed: #find, remove, and return task from description
             if task.description[:len(description)] == description:
-            #[:len(description)] allows us to quickly remove tasks by first
-            #few letters
                 task.hoursDone += hours
                 if task.hoursDone >= task.hours:
                     self.remove(description)
@@ -126,10 +117,12 @@ class TaskList(object):
                     self.remove(description)
                 return task
 
-    def calcAgenda(self,maxHours,maxDays=False,workDays=[0,1,2,3,4,5,6],workToday=True):
+    def calcAgenda(self,maxHours,maxDays=False,workDays=None,workToday=True):
         """
         maxDays maximizes work in given time at expense of easy/time efficiency
         """
+        if workDays is None:
+            workDays = [0,1,2,3,4,5,6]
         start_day = datetime.date.today()
         if self.latestTask == start_day:
             plan_tasks = [[]]
@@ -170,14 +163,14 @@ class TaskList(object):
             task = self.assignments[i]
             print task.description
             if task.due < datetime.date.today(): continue
-            days_away = (task.due - start_day).days #- 1 #index is days #-1 to finish a day in advance
-                                                             #away from today
+            #subtract one here to finish in advance
+            days_away = (task.due - start_day).days
             hoursDone = task.hoursDone
             for day in xrange(days_away+1):
                 hoursLeft = task.hours - hoursDone
                 if hoursLeft == 0:
                     continue
-                if day == 0 and workToday == False: continue
+                if day == 0 and workToday is False: continue
                 dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(day))
                 if dayOfWeek not in workDays:
                     if day == days_away and hoursLeft != 0:
@@ -185,7 +178,6 @@ class TaskList(object):
                     else:
                         continue
                 daysLeft = (days_away - day)
-                weeksLeft = (daysLeft/7)
                 workdaysremaining = 0
                 for checkday in xrange(daysLeft):
                     if (dayOfWeek + checkday) % 7 in workDays:
@@ -193,7 +185,7 @@ class TaskList(object):
                 if workdaysremaining == 0: return None
                 if workdaysremaining == 1:
                     hoursPerDay = hoursLeft
-                elif (i == (len(self.assignments) - 1) and maxDays == True):
+                elif (i == (len(self.assignments) - 1) and maxDays is True):
                     hoursPerDay = min(maxHours - plan_hours[day],hoursLeft)
                 else:
                     hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdaysremaining))))
@@ -217,15 +209,17 @@ class GraphicsElement(object): #basic graphical element
         self.height = height
         self.elements = [] #keep track of canvas elements to clear
 
-    def add(self,element): #add elements to a list so we have a list
-                           #associated with each GraphicsElement
+    #add elements to a list so we have a list
+    #associated with each GraphicsElement
+    def add(self,element):
         self.elements += [element]
 
     def clear(self): #use the list of elements for this GraphicsElement to clear only this object from the canvas
         for element in self.elements: #most basic
             self.canvas.delete(element)
 
-    def draw(self): pass #is this necessary?
+    def draw(self, selectAgenda):
+        pass #is this necessary?
 
 class Agenda(GraphicsElement):
     def __init__(self,canvas,width,height,day,month,year):
@@ -251,7 +245,7 @@ class Agenda(GraphicsElement):
         self.add(self.canvas.create_text(self.right,self.top,text="Due Date",
             font=("Helvetica", 10, "bold"),anchor=NE))
 
-    def draw(self,selectedAgenda):
+    def draw(self, selectedAgenda):
         #loop to create rectangles
         #loop to create labels for calendar
         self.clear()
@@ -304,22 +298,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
     def drawCell(self,left,top,right,bottom):
         pass #draw calendar rectangle with label
 
-    def dragMouse(self): #necessary?
-        for i in xrange(len(selectedAgenda)):
-            item = selectedAgenda[i]
-            tempDescription = item[0].description
-            if len(tempDescription) > 15:
-                tempDescription = tempDescription[:11] + "..."
-            newTop = self.top + 20*(i+1)
-            self.add(self.canvas.create_text(self.left,newTop,
-                text=tempDescription,font=("Helvetica", 10,),anchor=NW))
-            self.add(self.canvas.create_text(self.left + ((self.right - \
-                self.left) / 2),newTop,text=item[1],font=("Helvetica", 10,),
-            anchor=N))
-            self.add(self.canvas.create_text(self.right,newTop,
-                text=item[0].due,font=("Helvetica", 10,),anchor=NE))
-
-    def draw(self,planner,calSearch=None):
+    def draw(self, planner, calSearch=None):
         self.clear()
         self.add(self.canvas.create_text(self.width*15./40,
             self.height*1./20,text=self.months[self.month-1] + " " + \
@@ -346,8 +325,8 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                     #if self.monthArray[row][col] == self.selectedDay.day and\
                     #self.month == self.selectedDay.month and\
                     #self.year == self.selectedDay.year:
-                    if selectedAgenda != None and len(selectedAgenda) > 0 \
-                    and calSearch != None:
+                    if selectedAgenda is not None and len(selectedAgenda) > 0 \
+                    and calSearch is not None:
                         for task in selectedAgenda:
                             if task[0].description[:len(calSearch)] ==\
                              calSearch:
@@ -364,7 +343,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                     self.add(self.canvas.create_text(newLeft+2,newTop+1,
                         anchor=NW,text=self.monthArray[row][col],
                         font=("Helvetica", 12, "bold")))
-                    if selectedAgenda != None:
+                    if selectedAgenda is not None:
                         for i in xrange(len(selectedAgenda)):
                             item = selectedAgenda[i]
                             newTop2 = newTop + 15*(i+1)
@@ -416,130 +395,6 @@ class CalendarPlanner(object):
             days += [today+datetime.timedelta(i)]
         return days
 
-    def makeiCal(self):
-        #myFormats = [('iCalendar File','*.ics')] #irrelevant on mac
-        fileName = tkFileDialog.asksaveasfilename(parent=self.root,
-            initialfile="mySchedule.ics",defaultextension=".ics",
-            title="Save the iCalendar file...")
-        if fileName == None or len(fileName) < 1: return
-        days = self.getAgendaDays()
-        ical = Calendar()
-        for i in xrange(len(self.agendaCalc)):
-            dayAgenda = self.agendaCalc[i]
-            for item in dayAgenda:
-                event = Event()
-                #print item
-                event.add('summary', item[0].description + " - " + \
-                str(item[1]) + " hours") #item[0] is task, item[1] is
-                                         #hours for that day
-                if isinstance(item[0], FixedTask):
-                    #print item[0].startTime
-                    #start = datetime.datetime.combine(days[i],
-                        #datetime.time(item[0].startTime))
-                    #end = datetime.datetime.combine(days[i],
-                        #datetime.time(item[0].endTime))
-                    #print item[0] # fix recurring ical #done
-                    event.add('dtstart',item[0].startTime)
-                    event.add('dtend',item[0].endTime)
-                else:
-                    event.add('dtstart', days[i]) #datetime(2005,4,4,8,0,0,
-                                                  #tzinfo=pytz.utc)
-                ical.add_component(event)
-            f = open(fileName, 'wb') #these 3 lines adapted from
-                                     #package documentation
-            f.write(ical.to_ical())
-            f.close()
-            #ical['dtstart'] = str(item) #heavy lifting done in __str__
-            #methods of Task() and FixedTask() classes #these have been
-            #replaced with better code making use of library functions
-            #ical['summary'] = item[0].description + " - " + str(item[1])\
-            # + " hours" #item[0] is task, item[1] is hours for that day
-
-    def getNumber(self):
-        self.userNumber = None
-        number = tkSimpleDialog.askstring("Phone Number",
-         "Please enter your phone number.")
-        if number == None: return
-        self.userNumber = number
-
-    def getCarrier(self):
-        self.carrier = None
-        carrier = tkSimpleDialog.askstring("Cell Carrier",
-         "Enter AT&T, Verizon, T-Mobile, or Sprint")
-        if carrier == None: return
-        carriers = ["AT&T","Verizon","T-Mobile","Sprint"]
-        if carrier in carriers:
-            self.carrier = carrier
-        else:
-            tkMessageBox.showerror("Carrier Not Found",
-             "That carrier isn't available.")
-
-    def sendText(self): #form submission code adapted from
-    #http://null-byte.wonderhowto.com/how-to/send-sms-messages-with-python-\
-    #0132938/, modified to automatically use user data and store the number
-    #for reuse between saves within this class
-        if len(self.selectedAgenda) < 1:
-            tkMessageBox.showerror("No Agenda",
-             "There is no agenda to send on the selected day!")
-            return
-        check = False
-        if self.userNumber != None and self.carrier != None:
-            check = tkMessageBox.askyesno("Phone number already saved.",
-             "Do you want to use the number %s with carrier %s?" %\
-              (self.userNumber,self.carrier))
-            if check == False:
-                self.getNumber()
-                if self.userNumber == None: return
-                self.getCarrier()
-                if self.carrier == None: return
-        else: #fix logic here?
-            self.getNumber()
-            if self.userNumber == None: return
-            self.getCarrier()
-            if self.carrier == None: return
-        if self.carrier == None:
-            tkMessageBox.showerror("Carrier Not Found",
-             "There is no assigned carrier.")
-            return
-        self.saveData()
-        #enter user provider manually AT&T/Verizon/Sprint/T-Mobile
-        message = " "
-        for item in self.selectedAgenda:
-            message += "Do " + item[0].description
-            if item[1] == 1:
-                message += " for " + str(item[1]) + " hour. "
-            else:
-                message += " for " + str(item[1]) + " hours. "
-        message = message[:-1] #remove extra space (compulsive, I know.)
-        prov = ''
-        url = 'http://www.onlinetextmessage.com/send.php'
-        provider = self.carrier
-        if self.carrier == "Sprint":
-            prov = '175'
-        if self.carrier == "T-Mobile":
-            prov = '182'
-        if self.carrier == "Verizon":
-            prov = '203'
-        if self.carrier == "AT&T":
-            prov = '41'
-        #print prov
-        if prov == 0:
-            tkMessageBox.showerror("Carrier Not Found",
-             "There is no assigned carrier.")
-        values = {'code' : '',
-                  'number' : self.userNumber,
-                  'from' : 'nedscalendarplanner@gmail.com',
-                  'remember' : 'n',
-                  'subject' : 'Your Requested Schedule',
-                  'carrier' : prov,
-                  'quicktext' : '',
-                  'message' : message,
-                  's' : 'Send Message'}
-        data = urllib.urlencode(values)  ##text sender
-        req = urllib2.Request(url, data)
-        response = urllib2.urlopen(req)
-        the_page = response.read()
-
     def calSearch(self):
         #prompt user for name of task, all tasks with matching initial chars
         #are highlighted
@@ -547,32 +402,22 @@ class CalendarPlanner(object):
         self.cal.foundTask = False
         calSearch = tkSimpleDialog.askstring("Task Finder",
          "What is the name of your task?")
-        if calSearch == None: return
+        if calSearch is None: return
         self.cal.draw(self,calSearch)
-        if self.cal.foundTask == False:
+        if self.cal.foundTask is False:
             tkMessageBox.showinfo("Task Not Found",
              "The task you described is not present in this month.")
 
     def clearData(self):
         check = tkMessageBox.askyesno("Are you sure?",
          "Are you sure you want to clear all of your data?")
-        if check == True:
+        if check is True:
             self.tasks = TaskList() #reinitialize
             self.saveData()
             self.createAgenda() #update agenda
-            #if self.agendaCalc == None:
-            #    tkMessageBox.showerror("Impossible to Schedule",
-                    #"You can't finish that task in the given time per day!")
-            #    self.tasks.remove(task.description)
-            #    self.createAgenda()
-            #    #return
             self.selectAgenda(self.row,self.col)
             self.agenda.draw(self.selectedAgenda)
             self.cal.draw(self)
-        #with open("cal.pkl","w"): #from EFFbot's website on the "with"
-        #statement #http://effbot.org/zone/python-with-statement.htm
-        #pass #this can be done other ways, but I like this efficient
-        #implementation because it ensures that the file is closed
 
     def saveData(self):
         data = [self.tasks,self.maxHours,self.maxDays,self.userNumber,
@@ -589,12 +434,6 @@ class CalendarPlanner(object):
             self.carrier = data[4]
             self.workDays = data[5]
             self.createAgenda() #update agenda
-            #if self.agendaCalc == None:
-            #    tkMessageBox.showerror("Impossible to Schedule",
-                    #"You can't finish that task in the given time per day!")
-            #    self.tasks.remove(task.description)
-            #    self.createAgenda()
-            #    #return
             self.selectAgenda(self.row,self.col)
             self.agenda.draw(self.selectedAgenda)
             self.cal.draw(self)
@@ -606,15 +445,13 @@ class CalendarPlanner(object):
         self.agendaCalc = self.tasks.calcAgenda(self.maxHours,self.maxDays,self.workDays,self.workToday)
 
     def drawDragDrop(self,event):
-        if self.taskDraw != None:
+        if self.taskDraw is not None:
             self.canvas.delete(self.taskDraw)
             x = event.x
             y = event.y
             self.taskDraw = self.canvas.create_text(x,y,
                 text=self.dragTask[0].description,
                 font=("Helvetica", 18, "bold"))
-            pass #use this to draw the thing under the mouse if
-                 #mousePressed is true and we have an element
 
     def checkIfAgenda(self,event):
         x = event.x
@@ -636,7 +473,7 @@ class CalendarPlanner(object):
         originaldue = task.due
         task.due = date
         if hasattr(task,"recurring"):
-            if task.recurring == True:
+            if task.recurring is True:
                 tkMessageBox.showerror("Impossible to Schedule",
                  "You can't reschedule a recurring task!")
                 return
@@ -647,7 +484,7 @@ class CalendarPlanner(object):
         if date > self.tasks.latestTask:
             self.tasks.latestTask = date
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish that task in the given time per day!")
             task.due = originaldue
@@ -682,7 +519,7 @@ class CalendarPlanner(object):
                 self.placeTask(date)
 
     def mouseReleased(self,event):
-        if self.dragTask != None:
+        if self.dragTask is not None:
             self.tryToPlace(event)
             self.canvas.delete(self.taskDraw)
             self.dragTask = None
@@ -696,7 +533,7 @@ class CalendarPlanner(object):
         y = event.y
         #print x,y
         self.checkIfAgenda(event)
-        if self.dragTask != None:
+        if self.dragTask is not None:
             return
         left = int(self.cal.left) #take all information from calendar class,
                                   #no copy-paste
@@ -708,7 +545,7 @@ class CalendarPlanner(object):
         col = (x - left) / cellWidth
         row = (y - top) / cellHeight
         selectedAgenda = self.selectAgenda(row,col)
-        if selectedAgenda != None:
+        if selectedAgenda is not None:
             self.agenda.draw(selectedAgenda)
             self.row = row
             self.col = col
@@ -723,7 +560,7 @@ class CalendarPlanner(object):
                 self.row = row
                 self.col = col
                 selectedAgenda = self.selectAgenda(row,col)
-                if selectedAgenda != None:
+                if selectedAgenda is not None:
                     self.agenda.draw(selectedAgenda)
                 else:
                     self.agenda.clear()
@@ -733,7 +570,7 @@ class CalendarPlanner(object):
                 self.row = row
                 self.col = col
                 selectedAgenda = self.selectAgenda(row,col)
-                if selectedAgenda != None:
+                if selectedAgenda is not None:
                     self.agenda.draw(selectedAgenda)
                 else:
                     self.agenda.clear()
@@ -774,14 +611,14 @@ class CalendarPlanner(object):
         maxHours = tkSimpleDialog.askinteger("Hour Set",
          "How many hours will you work per day? Currently " +\
           str(self.maxHours) + " hours.")
-        if maxHours == None: return
+        if maxHours is None: return
         if maxHours > 24 or maxHours < 0:
             tkMessageBox.showerror("Impossible",
              "Please enter an integer 0-24.")
             return
         self.maxHours = maxHours
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish your tasks in the given work hours per day!")
             self.maxHours = original
@@ -799,7 +636,7 @@ class CalendarPlanner(object):
     def toggleMaxDays(self):
         self.maxDays = not self.maxDays
         self.createAgenda() #update agenda
-        #if self.agendaCalc == None:
+        #if self.agendaCalc is None:
         #    tkMessageBox.showerror("Impossible to Schedule",
         #     "You can't finish your tasks if you toggle your schedule optimization!")
         #    self.maxDays = not self.maxDays
@@ -813,13 +650,13 @@ class CalendarPlanner(object):
     def addAssignment(self): #graphical implementation
         description = tkSimpleDialog.askstring("Task Adder",
          "What is the name of your task?")
-        if description == None: return
+        if description is None: return
         hours = tkSimpleDialog.askinteger("Task Adder",
          "How many hours will it take to complete?")
-        if hours == None: return
+        if hours is None: return
         dueString = tkSimpleDialog.askstring("Task Adder",
          "When is it due? Enter MM/DD or MM/DD/YYYY")
-        if dueString == None: return
+        if dueString is None: return
         month = int(dueString[0:2])
         day = int(dueString[3:5])
         if len(dueString) == 10:
@@ -842,7 +679,7 @@ class CalendarPlanner(object):
         #print task.description,task.hours,task.hoursDone,task.due
         #pdb.set_trace()
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish that task in the given time per day!")
             self.tasks.remove(task.description)
@@ -856,10 +693,10 @@ class CalendarPlanner(object):
     def addFixedTask(self): #same, but with a fixed task
         description = tkSimpleDialog.askstring("Task Adder",
          "What is the name of your task?")
-        if description == None: return
+        if description is None: return
         dueString = tkSimpleDialog.askstring("Task Adder",
          "What day is it? Enter MM/DD or MM/DD/YYYY")
-        if dueString == None: return
+        if dueString is None: return
         month = int(dueString[0:2])
         day = int(dueString[3:5])
         if len(dueString) == 10:
@@ -878,7 +715,7 @@ class CalendarPlanner(object):
         timeString = tkSimpleDialog.askstring("Task Adder",
          "What time is it? Enter HH-HH or HH:MM-HH:MM")
         #print timeString
-        if timeString == None:
+        if timeString is None:
             return
         if len(timeString) == 5 and timeString[2] == "-":
             startTime = int(timeString[0:2])
@@ -916,7 +753,7 @@ class CalendarPlanner(object):
         self.tasks.add(task)
         #print self.tasks.fixed
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish that task in the given time per day!")
             self.tasks.remove(task.description)
@@ -929,9 +766,9 @@ class CalendarPlanner(object):
     def addRecurringTask(self):
         description = tkSimpleDialog.askstring("Task Adder",
          "What is the name of your task?")
-        if description == None: return
+        if description is None: return
         recurringDays = tkSimpleDialog.askstring("Recurring Days","Enter comma separated days: e.g. \"0,1,2,3,4,5,6\"")
-        if recurringDays == None: return
+        if recurringDays is None: return
         recurring = []
         for i in xrange(0,len(recurringDays),2):
             recurring += [int(recurringDays[i])]
@@ -941,7 +778,7 @@ class CalendarPlanner(object):
             return
         dueString = tkSimpleDialog.askstring("Task Adder",
          "Repeat until which day? Enter MM/DD or MM/DD/YYYY")
-        if dueString == None: return
+        if dueString is None: return
         month = int(dueString[0:2])
         day = int(dueString[3:5])
         if len(dueString) == 10:
@@ -961,7 +798,7 @@ class CalendarPlanner(object):
         timeString = tkSimpleDialog.askstring("Task Adder",
          "What time is it? Enter HH-HH or HH:MM-HH:MM")
         #print timeString
-        if timeString == None:
+        if timeString is None:
             return
         if len(timeString) == 5 and timeString[2] == "-":
             startTime = int(timeString[0:2])
@@ -997,7 +834,7 @@ class CalendarPlanner(object):
         task = FixedTask(description,startTime,endTime,recurring)
         self.tasks.add(task)
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish that task in the given time per day!")
             self.tasks.remove(task.description)
@@ -1010,11 +847,11 @@ class CalendarPlanner(object):
     def removeTask(self):
         description = tkSimpleDialog.askstring("Task Remover",
          "What is the name of your task?")
-        if description == None:
+        if description is None:
             return
             #tkMessageBox.showerror("Error", "You must provide a description!")
         removed = self.tasks.remove(description)
-        if removed == None:
+        if removed is None:
             tkMessageBox.showinfo("You Should Know...",
              "There was no task found matching that description!")
             return
@@ -1027,15 +864,15 @@ class CalendarPlanner(object):
     def addHours(self):
         description = tkSimpleDialog.askstring("Task Completer",
          "What is the name of your task?")
-        if description == None:
+        if description is None:
             return
             #tkMessageBox.showerror("Error", "You must provide a description!")
         hours = tkSimpleDialog.askinteger("Task Completer",
          "How many hours did you complete?")
-        if hours == None:
+        if hours is None:
             return
         added = self.tasks.addHours(description,hours)
-        if added == None:
+        if added is None:
             tkMessageBox.showinfo("You Should Know...",
              "There was no task found matching that description!")
             return
@@ -1086,12 +923,12 @@ class CalendarPlanner(object):
 
     def toggleWorkDay(self):
         dayint = tkSimpleDialog.askinteger("Workday Toggler","Which day do you want to toggle?")
-        if dayint == None: return
-        if (0 <= dayint <= 6) == False:
+        if dayint is None: return
+        if (0 <= dayint <= 6) is False:
             tkMessageBox.showerror("Invalid Input","Which day do you want to toggle?")
         self.toggleDayHelper(dayint)
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish your tasks if you toggle that day!")
             self.toggleDayHelper(dayint)
@@ -1105,7 +942,7 @@ class CalendarPlanner(object):
     def toggleToday(self):
         self.workToday = not self.workToday
         self.createAgenda() #update agenda
-        if self.agendaCalc == None:
+        if self.agendaCalc is None:
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't finish your tasks if you toggle that day!")
             self.workToday = not self.workToday
