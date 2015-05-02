@@ -2,366 +2,15 @@
 #Andrew: edwillia
 #Recitation: Section F
 
-from Tkinter import Tk, FALSE, Canvas, N, NE, Button, NW
 import datetime
 import calendar
-import math
 import tkSimpleDialog
 import tkMessageBox
 import pickle
 import os
-
-class Task(object): #recurring attribute here?
-    def __init__(self,description,hours,hoursDone,due):
-        self.description = description
-        self.hours = hours
-        self.hoursDone = hoursDone
-        self.due = due #date object with relevant info
-        #figure out recurring behavior (how do we know when to readd after
-        #checking it off?)
-
-    def __str__(self): #used to make ical
-        return str(self.due.year) + str(self.due.month) + str(self.due.day)
-
-    def __repr__(self):
-        return str(self.description) + ", Hours Left: " + str(self.hours - \
-            self.hoursDone) + ", Days Left: " + str((self.due - \
-                datetime.date.today()).days)
-
-class Assignment(Task): pass #same as Task?
-
-class FixedTask(Task):
-    def __init__(self,description,startTime,endTime,recurring=None):
-        #this should be dealt with using time objects
-        #done in make iCal as needed
-        self.startTime = startTime
-        self.endTime = endTime
-        new = " " + str(startTime.hour) + ":" + "%02d" % startTime.minute \
-        + "-" + str(endTime.hour) + ":" +  "%02d" % endTime.minute
-        description += new
-        #use actual timedelta to find hours
-        hours = ((endTime - startTime).seconds)/3600
-        due = startTime.date()
-        hoursDone = 0 #can't have hours completed in advance on a fixed event
-        self.recurring = recurring
-        super(FixedTask, self).__init__(description,hours,hoursDone,due)
-
-    #def __str__(self): #used to make ical
-        #startHour = self.startTime.hour
-        #if startHour < 10:
-        #    startHour = "0" + str(startHour)
-        #else:
-        #    startHour = str(startHour)
-        #return str(item.due.year) + str(item.due.month) + str(item.due.day)
-        #\+ "T" + str(startHour) +"0000" #last 4 are minutes and seconds
-
-    def __repr__(self):
-        return str(self.description) + ", Hours Left: " + str(self.hours \
-            - self.hoursDone) + ", Days Left: " + str((self.due - \
-                datetime.date.today()).days)
-
-class TaskList(object):
-    def __init__(self):
-        self.fixed = [] #fixed tasks
-        self.assignments = [] #assignments with due dates
-        self.latestTask = datetime.date.today() #initialize last task date to today
-        self.descriptionList = []
-        #due dates written as month,day,year
-        #calculate distance between two days
-
-    def add(self,task):
-        #print self.descriptionList
-        descriptionList = []
-        #print task
-        #print task.description,task.due
-        for check in self.fixed:
-            descriptionList += check.description
-        for check in self.assignments:
-            descriptionList += check.description
-        if task.description in descriptionList: #make sure we don't have a duplicate assignment name
-            #print "duped :("
-            return
-        #else:
-        #    self.descriptionList += [task.description]
-        if isinstance(task, FixedTask):
-            self.fixed += [task]
-            #print "Added fixed."
-        elif isinstance(task, Task):
-            self.assignments += [task]
-        if task.due > self.latestTask: #due date > lastestTask
-            self.latestTask = task.due
-
-    def remove(self,description):
-        for task in self.fixed: #find, remove, and return task from description
-            if task.description[:len(description)] == description:
-                self.fixed.remove(task)
-                #self.descriptionList.remove(task.description)
-                return task
-        for task in self.assignments:
-            if task.description[:len(description)] == description:
-                self.assignments.remove(task)
-                #self.descriptionList.remove(task.description)
-                return task
-
-    def addHours(self,description,hours):
-        for task in self.fixed: #find, remove, and return task from description
-            if task.description[:len(description)] == description:
-                task.hoursDone += hours
-                if task.hoursDone >= task.hours:
-                    self.remove(description)
-                return task
-        for task in self.assignments:
-            if task.description[:len(description)] == description:
-                task.hoursDone += hours
-                if task.hoursDone >= task.hours:
-                    self.remove(description)
-                return task
-
-    def calcAgenda(self,maxHours,maxDays=False,workDays=None,workToday=True):
-        """
-        maxDays maximizes work in given time at expense of easy/time efficiency
-        """
-        if workDays is None:
-            workDays = [0,1,2,3,4,5,6]
-        start_day = datetime.date.today()
-        if self.latestTask == start_day:
-            plan_tasks = [[]]
-            plan_hours = [0]
-        else:
-            plan_tasks = [[] for day in xrange((self.latestTask - start_day).days+1)] #[]*days until last assigned task
-            plan_hours = [0]*((self.latestTask - start_day).days+1)
-            self.assignments = sorted(self.assignments, key=lambda task: task.due)
-        for task in self.fixed:
-            days_away = (task.due - start_day).days
-            if len(task.recurring) > 0:
-                for i in xrange(days_away+1):
-                    dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
-                    if dayOfWeek not in task.recurring:
-                        continue
-                    due = start_day + datetime.timedelta(i)
-                    startHour = datetime.time(task.startTime.hour)
-                    endHour = datetime.time(task.endTime.hour)
-                    startTime = datetime.datetime.combine(due,startHour)
-                    endTime = datetime.datetime.combine(due,endHour)
-                    #4 extra chars, find length to chop before recalling constructor
-                    choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
-                    newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
-                    if newtask.hours + plan_hours[i] <= maxHours:
-                        plan_hours[i] += newtask.hours
-                        plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
-                    else:
-                        return None
-            else:
-                if task.hours + plan_hours[days_away] <= maxHours:
-                    plan_hours[days_away] += task.hours
-                    plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
-                else:
-                    return None
-
-        #cycle by index so we can check if we're on the last element
-        for i in xrange(len(self.assignments)):
-            task = self.assignments[i]
-            print task.description
-            if task.due < datetime.date.today(): continue
-            #subtract one here to finish in advance
-            days_away = (task.due - start_day).days
-            hoursDone = task.hoursDone
-            for day in xrange(days_away+1):
-                hoursLeft = task.hours - hoursDone
-                if hoursLeft == 0:
-                    continue
-                if day == 0 and workToday is False: continue
-                dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(day))
-                if dayOfWeek not in workDays:
-                    if day == days_away and hoursLeft != 0:
-                        return None
-                    else:
-                        continue
-                daysLeft = (days_away - day)
-                workdaysremaining = 0
-                for checkday in xrange(daysLeft):
-                    if (dayOfWeek + checkday) % 7 in workDays:
-                        workdaysremaining += 1
-                if workdaysremaining == 0: return None
-                if workdaysremaining == 1:
-                    hoursPerDay = hoursLeft
-                elif (i == (len(self.assignments) - 1) and maxDays is True):
-                    hoursPerDay = min(maxHours - plan_hours[day],hoursLeft)
-                else:
-                    hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdaysremaining))))
-                if hoursPerDay == 0: continue
-                if hoursPerDay + plan_hours[day] <= maxHours:
-                    hoursDone += hoursPerDay
-                    plan_hours[day] += hoursPerDay
-                    plan_tasks[day] += [(task,hoursPerDay)]
-                    #add tuple of task and hours allotted for that day
-                elif day == days_away:
-                    # if there are no days left, we can't
-                    # complete this assignment
-                    return None
-        #print plan_hours
-        return plan_tasks
-
-class GraphicsElement(object): #basic graphical element
-    def __init__(self,canvas,width,height):
-        self.canvas = canvas #element must know how to access its canvas
-        self.width = width #element must know its canvas size to position itself
-        self.height = height
-        self.elements = [] #keep track of canvas elements to clear
-
-    #add elements to a list so we have a list
-    #associated with each GraphicsElement
-    def add(self,element):
-        self.elements += [element]
-
-    def clear(self): #use the list of elements for this GraphicsElement to clear only this object from the canvas
-        for element in self.elements: #most basic
-            self.canvas.delete(element)
-
-    def draw(self, selectAgenda):
-        pass #is this necessary?
-
-class Agenda(GraphicsElement):
-    def __init__(self,canvas,width,height,day,month,year):
-        self.day = day
-        self.month = month
-        self.year = year
-        self.left = (15./20)*width
-        self.right = (19./20)*width
-        self.top = (2./20)*height
-        self.bottom = (19./20)*height
-        super(Agenda, self).__init__(canvas,width,height)
-        self.clear()
-
-    def clear(self):
-        super(Agenda, self).clear()
-        self.add(self.canvas.create_rectangle(self.left,self.top,
-        self.right,self.bottom)) #temp until we put the actual calendar
-        self.add(self.canvas.create_text(self.left,self.top,
-            text="Description",font=("Helvetica", 10, "bold"),anchor=NW))
-        self.add(self.canvas.create_text(self.left + ((self.right - \
-            self.left) / 2),self.top,text="Hours",font=("Helvetica", 10,
-             "bold"),anchor=N))
-        self.add(self.canvas.create_text(self.right,self.top,text="Due Date",
-            font=("Helvetica", 10, "bold"),anchor=NE))
-
-    def draw(self, selectedAgenda):
-        #loop to create rectangles
-        #loop to create labels for calendar
-        self.clear()
-        for i in xrange(len(selectedAgenda)):
-            item = selectedAgenda[i]
-            tempDescription = item[0].description
-            if len(tempDescription) > 15:
-                tempDescription = tempDescription[:14] + "..."
-            newTop = self.top + 20*(i+1)
-            if newTop + 40 > self.bottom:
-                self.add(self.canvas.create_text(self.left,newTop,
-                    text="......",font=("Helvetica", 10,),anchor=NW))
-                break
-            self.add(self.canvas.create_text(self.left,newTop,
-                text=tempDescription,font=("Helvetica", 10,),anchor=NW))
-            self.add(self.canvas.create_text(self.left +\
-             ((self.right - self.left) / 2),newTop,text=item[1],
-             font=("Helvetica", 10,),anchor=N))
-            self.add(self.canvas.create_text(self.right,newTop,
-                text=item[0].due,font=("Helvetica", 10,),anchor=NE))
-
-class gCalendar(GraphicsElement): #draw calendar with given specs
-    def __init__(self,canvas,width,height,month,year):
-        self.month = month
-        self.year = year
-        self.currentDay = datetime.date.today()
-        self.selectedDay = self.currentDay
-        self.left = (1./20)*width
-        self.right = (14./20)*width
-        self.top = (2./20)*height
-        self.bottom = (14./20)*height
-        self.monthArray = calendar.monthcalendar(self.year,self.month)
-        self.weeks = len(self.monthArray)
-        self.cellWidth = (self.right - self.left) / 7
-        self.cellHeight = (self.bottom - self.top) / self.weeks
-        self.months = ["January","February","March","April","May","June",
-        "July","August","September","October","November","December"]
-        self.days = ["Monday","Tuesday","Wednesday","Thursday","Friday",
-        "Saturday","Sunday"]
-        super(gCalendar, self).__init__(canvas,width,height)
-
-    def widthHeight(self,width,height):
-        self.width = width
-        self.height = height
-
-    def calendarTable(self,month,year):
-        pass
-        #use calendar to get 2d view, parse into 2d list
-
-    def drawCell(self,left,top,right,bottom):
-        pass #draw calendar rectangle with label
-
-    def draw(self, planner, calSearch=None):
-        self.clear()
-        self.add(self.canvas.create_text(self.width*15./40,
-            self.height*1./20,text=self.months[self.month-1] + " " + \
-            str(self.year),font=("Helvetica", 26, "bold")))
-        for row in xrange(self.weeks):
-            for col in xrange(7):
-                newLeft = self.left+self.cellWidth*col
-                newRight = newLeft + self.cellWidth
-                newTop = self.top+self.cellHeight*row
-                newBottom = newTop+self.cellHeight
-                if row == 0: #create day of week labels on first pass
-                    self.add(self.canvas.create_text((newLeft+newRight)/2,
-                        self.height*7./80,text=self.days[col],
-                        font=("Helvetica", 12, "bold")))
-                if self.monthArray[row][col] != 0:
-                    selectedAgenda = planner.getAgenda(row,col)
-                    self.add(self.canvas.create_rectangle(newLeft,newTop,
-                    newRight,newBottom)) #day box
-                    if self.monthArray[row][col] == self.selectedDay.day and \
-                    self.month == self.selectedDay.month and self.year == \
-                    self.selectedDay.year:
-                        self.add(self.canvas.create_rectangle(newLeft,newTop,
-                        newRight,newBottom,fill="yellow")) #selected box
-                    #if self.monthArray[row][col] == self.selectedDay.day and\
-                    #self.month == self.selectedDay.month and\
-                    #self.year == self.selectedDay.year:
-                    if selectedAgenda is not None and len(selectedAgenda) > 0 \
-                    and calSearch is not None:
-                        for task in selectedAgenda:
-                            if task[0].description[:len(calSearch)] ==\
-                             calSearch:
-                                self.add(self.canvas.create_rectangle(newLeft,
-                                newTop,newRight,newBottom,fill="orange"))
-                                #search found! paint box
-                                self.foundTask = True
-                                continue
-                    if self.monthArray[row][col] == self.currentDay.day\
-                     and self.month == self.currentDay.month and self.year\
-                      == self.currentDay.year:
-                        self.add(self.canvas.create_rectangle(newLeft,newTop,
-                        newRight,newBottom,fill="green")) #today box
-                    self.add(self.canvas.create_text(newLeft+2,newTop+1,
-                        anchor=NW,text=self.monthArray[row][col],
-                        font=("Helvetica", 12, "bold")))
-                    if selectedAgenda is not None:
-                        for i in xrange(len(selectedAgenda)):
-                            item = selectedAgenda[i]
-                            newTop2 = newTop + 15*(i+1)
-                            tempDescription = item[0].description
-                            if newTop2 + 30 > newBottom:
-                                self.add(self.canvas.create_text(newLeft,
-                                    newTop2,text="......",font=("Helvetica",
-                                     10,),anchor=NW))
-                                break
-                            if len(tempDescription) > 15:
-                                tempDescription = tempDescription[:11] +\
-                                 "..." + tempDescription[-3:]
-                            self.add(self.canvas.create_text(newLeft,newTop2,
-                                text=tempDescription,font=("Helvetica", 10,),
-                                anchor=NW))
-                else:
-                    self.add(self.canvas.create_rectangle(newLeft,newTop,
-                    newRight,newBottom,fill="gray")) #day box
+from tasks import TaskList, FixedTask
+from Tkinter import Tk, FALSE, Canvas, Button
+from graphics import gCalendar, Agenda
 
 class CalendarPlanner(object):
     def __init__(self,width=900,height=600,selectedDayDistance=0,
@@ -921,6 +570,10 @@ class CalendarPlanner(object):
         if dayint in self.workDays: self.workDays.remove(dayint)
         else: self.workDays.append(dayint)
 
+    #call failure if we can't schedule
+    def attempt_to_schedule(self, failure):
+        pass
+
     def toggleWorkDay(self):
         dayint = tkSimpleDialog.askinteger("Workday Toggler","Which day do you want to toggle?")
         if dayint is None: return
@@ -966,6 +619,7 @@ class CalendarPlanner(object):
         self.agenda = Agenda(self.canvas,self.width,self.height,1,1,2012)
         self.agenda.clear()
         #self.agenda.draw([0]) #draw today's agenda when initializing
+        #TODO: this can be done waaaaay better
         b1 = Button(self.canvas, text="Previous Month",
          command=self.previousMonth) #initialize buttons
         b2 = Button(self.canvas, text="Next Month", command=self.nextMonth)
@@ -983,8 +637,6 @@ class CalendarPlanner(object):
          command=self.toggleMaxDays)
         b10 = Button(self.canvas, text="Search Calendar",
          command=self.calSearch)
-        b11 = Button(self.canvas, text="Send Text", command=self.sendText)
-        b12 = Button(self.canvas, text="Make iCal File", command=self.makeiCal)
         b13 = Button(self.canvas, text="I've Done Work!",
          command=self.addHours)
         b14 = Button(self.canvas, text="Toggle Work Days", command=self.toggleWorkDay)
@@ -1015,18 +667,13 @@ class CalendarPlanner(object):
         self.canvas.create_window(col2,self.height*29./40+120, window=b14)
         self.canvas.create_window(col2,self.height*29./40+150, window=b15)
         self.canvas.create_window(col3,self.height*29./40+30, window=b10)
-        self.canvas.create_window(col3,self.height*29./40+60, window=b11)
-        self.canvas.create_window(col3,self.height*29./40+90, window=b12)
         self.canvas.create_window(col3,self.height*29./40+120, window=b7)
         self.canvas.pack()
 
     def run(self):
-        # create the root and the canvas
-        #global canvas
         self.root = Tk()
-        self.root.resizable(width=FALSE, height=FALSE) #from kosbie
+        self.root.resizable(width=FALSE, height=FALSE)
         self.canvas = Canvas(self.root, width=self.width, height=self.height)
-        # Set up canvas data and call init
         self.init()
         if os.path.exists("cal.pkl"):
             self.loadData()
@@ -1041,17 +688,12 @@ class CalendarPlanner(object):
             self.mouseMotion(event)
         def mouseReleaseWrapper(event):
             self.mouseReleased(event)
-        self.root.bind("<Button-1>", mousePressedWrapper) #wrappers needed
+        self.root.bind("<Button-1>", mousePressedWrapper)
         self.root.bind("<B1-Motion>", mouseMotionWrapper)
         self.root.bind("<ButtonRelease-1>", mouseReleaseWrapper)
-        #root.bind("<Key>", keyPressed)
-        #timerFired()
-        # and launch the app
         self.root.title("Ned's Intelligent Calendar Planner")
         self.root.mainloop()
         self.saveData()
 
-app = CalendarPlanner(1000,700) #1000x700 canvas, default is 900x600
-#app = CalendarPlanner()
-#app.testAgenda() #run this to fill with test data
+app = CalendarPlanner(1000,700)
 app.run()
