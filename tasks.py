@@ -56,8 +56,8 @@ class TaskList(object):
             if task.description in self.assignments:
                 return
             self.assignments[task.description] = task
-        if task.due > self.latestTask: #due date > lastestTask
-            self.latestTask = task.due
+        if task.due > self.latest_task: #due date > lastestTask
+            self.latest_task = task.due
 
     #now removing goes by the exact string
     #we should have a function that does fuzzy matching
