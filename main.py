@@ -21,25 +21,26 @@ class Day(object):
         self.day = day
 
 class CalendarPlanner(object):
-    def __init__(self,width=900,height=600,selectedDayDistance=0,
-        maxHours=8,maxDays=False):
+    def __init__(self,width=900,height=600,max_hours=8):
         self.width = width
         self.height = height
         today = datetime.date.today()
         self.selected_day = Day(today.year, today.month, today.day)
         self.tasks = TaskList()
-        self.maxHours = maxHours
-        self.maxDays = maxDays
-        calendarPlanner = calendar.monthcalendar(self.selected_day.year, self.selected_day.month)
+        self.max_hours = max_hours
+        self.maxDays = False
         self.dragTask = None
         self.taskDraw = None
         self.workDays = [0,1,2,3,4,5,6]
         self.workToday = True
-        for row in xrange(len(calendarPlanner)):
-            for col in xrange(7):
-                if calendarPlanner[row][col] == self.selected_day.day:
-                    self.row = row
-                    self.col = col
+        this_month_cal = calendar.monthcalendar(self.selected_day.year, self.selected_day.month)
+        weeks = len(this_month_cal)
+        days = 7
+        for week in xrange(weeks):
+            for day in xrange(days):
+                if this_month_cal[week][day] == self.selected_day.day:
+                    self.week = week
+                    self.day = day
 
     def getAgendaDays(self):
         today = datetime.date.today()
@@ -75,7 +76,7 @@ class CalendarPlanner(object):
         with open(SAVEFILE, "w") as f:
             data = {
                 "tasks": self.tasks,
-                "max_hours": self.maxHours,
+                "max_hours": self.max_hours,
                 "max_days": self.maxDays,
                 "work_days": self.workDays
             }
@@ -86,11 +87,11 @@ class CalendarPlanner(object):
             with open(SAVEFILE, "r") as f:
                 data = json.loads(f.read())
                 self.tasks = data["tasks"]
-                self.maxHours = data["hours"]
+                self.max_hours = data["hours"]
                 self.maxDays = data["max_days"]
                 self.workDays = data["work_days"]
                 self.createAgenda() #update agenda
-                self.selectAgenda(self.row,self.col)
+                self.selectAgenda(self.week,self.day)
                 self.agenda.draw(self.selectedAgenda)
                 self.cal.draw(self)
         except:
@@ -99,10 +100,10 @@ class CalendarPlanner(object):
             exit()
 
     def createAgenda(self):
-        self.agendaCalc = self.tasks.calcAgenda(self.maxHours,self.maxDays,self.workDays,self.workToday)
+        self.agendaCalc = self.tasks.calcAgenda(self.max_hours,self.maxDays,self.workDays,self.workToday)
 
     def create_agenda_safe(self):
-        return self.tasks.calcAgenda(self.maxHours,self.maxDays,self.workDays,self.workToday)
+        return self.tasks.calcAgenda(self.max_hours,self.maxDays,self.workDays,self.workToday)
 
     def drawDragDrop(self,event):
         if self.taskDraw is not None:
@@ -166,8 +167,8 @@ class CalendarPlanner(object):
                 month = self.cal.month
                 year = self.cal.year
                 date = datetime.date(year,month,day)
-                #self.row = row #used for new selected Agenda?
-                #self.col = col
+                #self.week = row #used for new selected Agenda?
+                #self.day = col
                 self.placeTask(date)
 
     def mouseReleased(self,event):
@@ -196,18 +197,18 @@ class CalendarPlanner(object):
         selectedAgenda = self.selectAgenda(row,col)
         if selectedAgenda is not None:
             self.agenda.draw(selectedAgenda)
-            self.row = row
-            self.col = col
+            self.week = row
+            self.day = col
         elif row >= 0 and col >= 0 and row < self.cal.weeks and col < 7:
             if self.cal.monthArray[row][col] != 0:
                 self.agenda.clear()
-                self.row = row
-                self.col = col
+                self.week = row
+                self.day = col
             elif row > 0:
                 self.nextMonth()
                 row = 0
-                self.row = row
-                self.col = col
+                self.week = row
+                self.day = col
                 selectedAgenda = self.selectAgenda(row,col)
                 if selectedAgenda is not None:
                     self.agenda.draw(selectedAgenda)
@@ -216,8 +217,8 @@ class CalendarPlanner(object):
             elif row == 0:
                 self.previousMonth()
                 row = len(self.cal.monthArray) - 1
-                self.row = row
-                self.col = col
+                self.week = row
+                self.day = col
                 selectedAgenda = self.selectAgenda(row,col)
                 if selectedAgenda is not None:
                     self.agenda.draw(selectedAgenda)
@@ -256,24 +257,24 @@ class CalendarPlanner(object):
             return selectedAgenda
 
     def setMaxHours(self):
-        original = self.maxHours
+        original = self.max_hours
         maxHours = tkSimpleDialog.askinteger("Hour Set",
-         "How many hours will you work per day? Currently {} hours.".format(self.maxHours))
+         "How many hours will you work per day? Currently {} hours.".format(self.max_hours))
         if maxHours is None:
             return
         if maxHours > 24 or maxHours < 0:
             tkMessageBox.showerror("Impossible",
              "Please enter an integer 0-24.")
             return
-        self.maxHours = maxHours
+        self.max_hours = maxHours
         def failure():
-            self.maxHours = original
+            self.max_hours = original
         self.attempt_to_schedule(failure, 
             "You can't finish your tasks in the given work hours per day!")
         self.canvas.delete(self.agendaTitle)
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
             self.height*1./20,
-            text="Agenda ({} hour days)".format(self.maxHours),
+            text="Agenda ({} hour days)".format(self.max_hours),
             font=("Helvetica", 20, "bold"))
 
     def toggleMaxDays(self):
@@ -556,7 +557,7 @@ class CalendarPlanner(object):
             failure()
             return
         self.agendaCalc = agenda
-        self.selectAgenda(self.row,self.col)
+        self.selectAgenda(self.week,self.day)
         self.agenda.draw(self.selectedAgenda)
         self.cal.draw(self)
         self.saveData()
@@ -591,7 +592,7 @@ class CalendarPlanner(object):
         #draw agenda label
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
             self.height*1./20,
-            text="Agenda ({} hour days)".format(self.maxHours),
+            text="Agenda ({} hour days)".format(self.max_hours),
             font=("Helvetica", 20, "bold"))
         self.agenda = Agenda(self.canvas,self.width,self.height,1,1,2012)
         self.agenda.clear()
@@ -656,7 +657,7 @@ class CalendarPlanner(object):
         self.canvas.delete(self.agendaTitle)
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
             self.height*1./20,
-            text="Agenda ({} hour days)".format(self.maxHours),
+            text="Agenda ({} hour days)".format(self.max_hours),
             font=("Helvetica", 20, "bold"))
         # set up events
         def mousePressedWrapper(event):
