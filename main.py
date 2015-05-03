@@ -80,6 +80,7 @@ class CalendarPlanner(object):
 
     def loadData(self):
         #try:
+        return
         with open(SAVEFILE, "r") as f:
             data = json.loads(f.read())
             self.tasks = data["tasks"]
@@ -674,5 +675,6 @@ class CalendarPlanner(object):
         self.root.mainloop()
         self.saveData()
 
-app = CalendarPlanner(1000,700)
-app.run()
+if __name__ == "__main__":
+    app = CalendarPlanner(1000,700)
+    app.run()

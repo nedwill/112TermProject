@@ -97,7 +97,8 @@ class TaskList(object):
             plan_tasks = [[] for day in xrange((self.latest_task - start_day).days+1)] #[]*days until last assigned task
             plan_hours = [0]*((self.latest_task - start_day).days+1)
             self.assignments = sorted(self.assignments, key=lambda task: task.due)
-        for task in self.fixed:
+        for description, task in self.fixed.iteritems():
+            print description, repr(task)
             days_away = (task.due - start_day).days
             if len(task.recurring) > 0:
                 for i in xrange(days_away+1):
