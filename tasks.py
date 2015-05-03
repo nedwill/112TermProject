@@ -97,10 +97,11 @@ class TaskList(object):
             plan_tasks = [[] for day in xrange((self.latest_task - start_day).days+1)] #[]*days until last assigned task
             plan_hours = [0]*((self.latest_task - start_day).days+1)
             self.assignments = sorted(self.assignments, key=lambda task: task.due)
-        for description, task in self.fixed.iteritems():
-            print description, repr(task)
+        for task in self.fixed.values():
             days_away = (task.due - start_day).days
-            if len(task.recurring) > 0:
+            if days_away < 0:
+                continue
+            if task.recurring is not None and len(task.recurring) > 0:
                 for i in xrange(days_away+1):
                     dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
                     if dayOfWeek not in task.recurring:
@@ -126,8 +127,9 @@ class TaskList(object):
                     return None
 
         #cycle by index so we can check if we're on the last element
-        for i in xrange(len(self.assignments)):
-            task = self.assignments[i]
+        assignments = self.assignments.values()
+        for i in xrange(len(assignments)):
+            task = assignments[i]
             print task.description
             if task.due < datetime.date.today(): continue
             #subtract one here to finish in advance
@@ -153,7 +155,7 @@ class TaskList(object):
                     return None
                 if workdays_remaining == 1:
                     hoursPerDay = hoursLeft
-                elif (i == (len(self.assignments) - 1) and maxDays is True):
+                elif (i == (len(assignments) - 1) and maxDays is True):
                     hoursPerDay = min(maxHours - plan_hours[day],hoursLeft)
                 else:
                     hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdays_remaining))))
