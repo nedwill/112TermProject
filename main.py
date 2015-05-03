@@ -65,13 +65,10 @@ class CalendarPlanner(object):
     def clearData(self):
         check = tkMessageBox.askyesno("Are you sure?",
          "Are you sure you want to clear all of your data?")
-        if check is True:
+        if check:
             self.tasks = TaskList() #reinitialize
             self.saveData()
-            self.createAgenda() #update agenda
-            self.selectAgenda(self.row,self.col)
-            self.agenda.draw(self.selectedAgenda)
-            self.cal.draw(self)
+            self.attempt_to_schedule()
 
     def saveData(self):
         return #not working right now
@@ -85,21 +82,21 @@ class CalendarPlanner(object):
             f.write(json.dumps(data))
 
     def loadData(self):
-        #try:
-        return
-        with open(SAVEFILE, "r") as f:
-            data = json.loads(f.read())
-            self.tasks = data["tasks"]
-            self.maxHours = data["hours"]
-            self.maxDays = data["max_days"]
-            self.workDays = data["work_days"]
-            self.createAgenda() #update agenda
-            self.selectAgenda(self.row,self.col)
-            self.agenda.draw(self.selectedAgenda)
-            self.cal.draw(self)
-        #except:
-        #    tkMessageBox.showwarning("Couldn't Load Data",
-        #     "The data file exists but it could not be loaded!")
+        try:
+            with open(SAVEFILE, "r") as f:
+                data = json.loads(f.read())
+                self.tasks = data["tasks"]
+                self.maxHours = data["hours"]
+                self.maxDays = data["max_days"]
+                self.workDays = data["work_days"]
+                self.createAgenda() #update agenda
+                self.selectAgenda(self.row,self.col)
+                self.agenda.draw(self.selectedAgenda)
+                self.cal.draw(self)
+        except:
+            tkMessageBox.showwarning("Couldn't Load Data",
+             "The data file exists but it could not be loaded!")
+            exit()
 
     def createAgenda(self):
         self.agendaCalc = self.tasks.calcAgenda(self.maxHours,self.maxDays,self.workDays,self.workToday)
@@ -135,11 +132,10 @@ class CalendarPlanner(object):
         task = self.dragTask[0]
         originaldue = task.due
         task.due = date
-        if hasattr(task,"recurring"):
-            if task.recurring is True:
-                tkMessageBox.showerror("Impossible to Schedule",
-                 "You can't reschedule a recurring task!")
-                return
+        if hasattr(task, "recurring") and task.recurring:
+            tkMessageBox.showerror("Impossible to Schedule",
+             "You can't reschedule a recurring task!")
+            return
         if date < datetime.date.today():
             tkMessageBox.showerror("Impossible to Schedule",
              "You can't reschedule that task to the past!")
@@ -481,11 +477,7 @@ class CalendarPlanner(object):
             tkMessageBox.showinfo("You Should Know...",
              "There was no task found matching that description!")
             return
-        self.createAgenda() #update agenda
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule()
 
     def addHours(self):
         description = tkSimpleDialog.askstring("Task Completer",
@@ -502,11 +494,7 @@ class CalendarPlanner(object):
             tkMessageBox.showinfo("You Should Know...",
              "There was no task found matching that description!")
             return
-        self.createAgenda() #update agenda
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule()
 
     def testAgenda(self, data):
         try: #bugs in loading data aren't interesting
@@ -557,8 +545,11 @@ class CalendarPlanner(object):
             self.workDays.append(dayint)
 
     #call failure if we can't schedule
-    def attempt_to_schedule(self, failure, err_msg):
+    def attempt_to_schedule(self, failure=None, err_msg="Unknown scheduling error."):
         assert self.agendaCalc is not None #already working
+        if failure is None:
+            def failure():
+                pass
         agenda = self.create_agenda_safe()
         if agenda is None:
             tkMessageBox.showerror("Impossible to Schedule", err_msg)
