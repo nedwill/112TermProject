@@ -6,9 +6,9 @@ import datetime
 import calendar
 import tkSimpleDialog
 import tkMessageBox
-import pickle
+import json
 import os
-from tasks import TaskList, FixedTask
+from tasks import TaskList, FixedTask, Task
 from Tkinter import Tk, FALSE, Canvas, Button
 from graphics import gCalendar, Agenda
 
@@ -17,23 +17,19 @@ class CalendarPlanner(object):
         maxHours=8,maxDays=False):
         self.width = width
         self.height = height
-        self.month = datetime.date.today().month #current month
-        self.year = datetime.date.today().year #current year
-        self.day = datetime.date.today().day #current days
+        self.today = datetime.date.today()
         self.tasks = TaskList()
         self.selectedDayDistance = selectedDayDistance
         self.maxHours = maxHours
         self.maxDays = maxDays
-        calendarPlanner = calendar.monthcalendar(self.year,self.month)
-        self.userNumber = None
-        self.carrier = None
+        calendarPlanner = calendar.monthcalendar(self.today.year, self.today.month)
         self.dragTask = None
         self.taskDraw = None
         self.workDays = [0,1,2,3,4,5,6]
         self.workToday = True
         for row in xrange(len(calendarPlanner)):
             for col in xrange(7):
-                if calendarPlanner[row][col] == self.day:
+                if calendarPlanner[row][col] == self.today.day:
                     self.row = row
                     self.col = col
 
@@ -69,26 +65,30 @@ class CalendarPlanner(object):
             self.cal.draw(self)
 
     def saveData(self):
-        data = [self.tasks,self.maxHours,self.maxDays,self.userNumber,
-        self.carrier,self.workDays]
-        pickle.dump( data, open( "cal.pkl", "wb" ) )
+        with open("schedule.dat", "w") as f:
+            data = {
+                "tasks": self.tasks,
+                "max_hours": self.maxHours,
+                "max_days": self.maxDays,
+                "work_days": self.workDays
+            }
+            f.write(json.dumps(data))
 
     def loadData(self):
-        try:
-            data = pickle.load( open( "cal.pkl", "rb" ) )
-            self.tasks = data[0]
-            self.maxHours = data[1]
-            self.maxDays = data[2]
-            self.userNumber = data[3]
-            self.carrier = data[4]
-            self.workDays = data[5]
+        #try:
+        with open("schedule.dat", "r") as f:
+            data = json.loads(f.read())
+            self.tasks = data["tasks"]
+            self.maxHours = data["hours"]
+            self.maxDays = data["max_days"]
+            self.workDays = data["work_days"]
             self.createAgenda() #update agenda
             self.selectAgenda(self.row,self.col)
             self.agenda.draw(self.selectedAgenda)
             self.cal.draw(self)
-        except:
-            tkMessageBox.showwarning("Couldn't Load Data",
-             "The data file exists but it could not be loaded!")
+        #except:
+        #    tkMessageBox.showwarning("Couldn't Load Data",
+        #     "The data file exists but it could not be loaded!")
 
     def createAgenda(self):
         self.agendaCalc = self.tasks.calcAgenda(self.maxHours,self.maxDays,self.workDays,self.workToday)
@@ -132,17 +132,10 @@ class CalendarPlanner(object):
             return
         if date > self.tasks.latestTask:
             self.tasks.latestTask = date
-        self.createAgenda() #update agenda
-        if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish that task in the given time per day!")
+        def failure():
             task.due = originaldue
-            self.createAgenda()
-            #return
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule(failure,
+            "You can't finish that task in the given time per day!")
 
     def tryToPlace(self,event):
         x = event.x
@@ -150,8 +143,8 @@ class CalendarPlanner(object):
         left = int(self.cal.left) #take all information from calendar
                                   #class, no copy-paste
         top = int(self.cal.top)
-        right = int(self.cal.right)
-        bottom = int(self.cal.bottom)
+        #right = int(self.cal.right)
+        #bottom = int(self.cal.bottom)
         cellWidth = int(self.cal.cellWidth)
         cellHeight = int(self.cal.cellHeight)
         col = (x - left) / cellWidth
@@ -187,8 +180,8 @@ class CalendarPlanner(object):
         left = int(self.cal.left) #take all information from calendar class,
                                   #no copy-paste
         top = int(self.cal.top)
-        right = int(self.cal.right)
-        bottom = int(self.cal.bottom)
+        #right = int(self.cal.right)
+        #bottom = int(self.cal.bottom)
         cellWidth = int(self.cal.cellWidth)
         cellHeight = int(self.cal.cellHeight)
         col = (x - left) / cellWidth
@@ -266,17 +259,10 @@ class CalendarPlanner(object):
              "Please enter an integer 0-24.")
             return
         self.maxHours = maxHours
-        self.createAgenda() #update agenda
-        if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish your tasks in the given work hours per day!")
+        def failure():
             self.maxHours = original
-            self.createAgenda()
-            #return
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule(failure, 
+            "You can't finish your tasks in the given work hours per day!")
         self.canvas.delete(self.agendaTitle)
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
             self.height*1./20,text="Agenda (" + str(self.maxHours) +\
@@ -284,17 +270,10 @@ class CalendarPlanner(object):
 
     def toggleMaxDays(self):
         self.maxDays = not self.maxDays
-        self.createAgenda() #update agenda
-        #if self.agendaCalc is None:
-        #    tkMessageBox.showerror("Impossible to Schedule",
-        #     "You can't finish your tasks if you toggle your schedule optimization!")
-        #    self.maxDays = not self.maxDays
-        #    self.createAgenda()
-        #    #return
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        def failure():
+            self.maxDays = not self.maxDays
+        self.attempt_to_schedule(failure,
+            "You can't finish your tasks if you toggle your schedule optimization!")
 
     def addAssignment(self): #graphical implementation
         description = tkSimpleDialog.askstring("Task Adder",
@@ -326,18 +305,10 @@ class CalendarPlanner(object):
         task = Task(description,hours,hoursDone,due)
         self.tasks.add(task)
         #print task.description,task.hours,task.hoursDone,task.due
-        #pdb.set_trace()
-        self.createAgenda() #update agenda
-        if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish that task in the given time per day!")
+        def failure():
             self.tasks.remove(task.description)
-            self.createAgenda()
-            #return
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule(failure,
+            "You can't finish that task in the given time per day!")
 
     def addFixedTask(self): #same, but with a fixed task
         description = tkSimpleDialog.askstring("Task Adder",
@@ -398,19 +369,11 @@ class CalendarPlanner(object):
              "Invalid Time Range Entered!")
             return
         task = FixedTask(description,startTime,endTime)
-        #print task
         self.tasks.add(task)
-        #print self.tasks.fixed
-        self.createAgenda() #update agenda
-        if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish that task in the given time per day!")
+        def failure():
             self.tasks.remove(task.description)
-            self.createAgenda()
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule(failure,
+            "You can't finish that task in the given time per day!")
 
     def addRecurringTask(self):
         description = tkSimpleDialog.askstring("Task Adder",
@@ -482,16 +445,10 @@ class CalendarPlanner(object):
             return
         task = FixedTask(description,startTime,endTime,recurring)
         self.tasks.add(task)
-        self.createAgenda() #update agenda
-        if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish that task in the given time per day!")
+        def failure():
             self.tasks.remove(task.description)
-            self.createAgenda()
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule(failure,
+            "You can't finish that task in the given time per day!")
 
     def removeTask(self):
         description = tkSimpleDialog.askstring("Task Remover",
@@ -545,77 +502,77 @@ class CalendarPlanner(object):
         self.tasks = myTasks
 
     def previousMonth(self):
-        if self.month > 1:
-            self.month -= 1
+        if self.today.month > 1:
+            self.today.month -= 1
         else:
-            self.month = 12
-            self.year -= 1
+            self.today.month = 12
+            self.today.year -= 1
         self.cal.clear()
         self.cal = gCalendar(self.canvas,self.width,self.height,
-            self.month,self.year)
+            self.today.month,self.today.year)
         self.cal.draw(self)
 
     def nextMonth(self):
-        if self.month < 12:
-            self.month += 1
+        if self.today.month < 12:
+            self.today.month += 1
         else:
-            self.month = 1
-            self.year += 1
+            self.today.month = 1
+            self.today.year += 1
         self.cal.clear()
         self.cal = gCalendar(self.canvas,self.width,self.height,
-            self.month,self.year)
+            self.today.month,self.today.year)
         self.cal.draw(self)
 
     def toggleDayHelper(self,dayint):
-        if dayint in self.workDays: self.workDays.remove(dayint)
-        else: self.workDays.append(dayint)
+        if dayint in self.workDays:
+            self.workDays.remove(dayint)
+        else:
+            self.workDays.append(dayint)
 
     #call failure if we can't schedule
-    def attempt_to_schedule(self, failure):
-        pass
-
-    def toggleWorkDay(self):
-        dayint = tkSimpleDialog.askinteger("Workday Toggler","Which day do you want to toggle?")
-        if dayint is None: return
-        if (0 <= dayint <= 6) is False:
-            tkMessageBox.showerror("Invalid Input","Which day do you want to toggle?")
-        self.toggleDayHelper(dayint)
-        self.createAgenda() #update agenda
+    def attempt_to_schedule(self, failure, err_msg):
+        assert self.agendaCalc is not None #already working
+        self.createAgenda()
         if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish your tasks if you toggle that day!")
-            self.toggleDayHelper(dayint)
+            tkMessageBox.showerror("Impossible to Schedule", err_msg)
+            failure()
             self.createAgenda()
-            #return
         self.selectAgenda(self.row,self.col)
         self.agenda.draw(self.selectedAgenda)
         self.cal.draw(self)
         self.saveData()
+
+    def toggleWorkDay(self):
+        dayint = tkSimpleDialog.askinteger("Workday Toggler",
+            "Which day do you want to toggle?")
+        if dayint is None: return
+        if not (0 <= dayint <= 6):
+            tkMessageBox.showerror("Invalid Input", "Please enter a day 0-6.")
+            return
+        self.toggleDayHelper(dayint)
+        def failure():
+            self.toggleDayHelper(dayint)
+        self.attempt_to_schedule(failure,
+            "You can't finish your tasks if you toggle that day!")
 
     def toggleToday(self):
         self.workToday = not self.workToday
-        self.createAgenda() #update agenda
-        if self.agendaCalc is None:
-            tkMessageBox.showerror("Impossible to Schedule",
-             "You can't finish your tasks if you toggle that day!")
+        def failure():
             self.workToday = not self.workToday
-            self.createAgenda()
-            #return
-        self.selectAgenda(self.row,self.col)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
+        self.attempt_to_schedule(failure,
+            "You can't finish your tasks if you toggle that day!")
 
     def init(self):
         #draw calendar label
         self.cal = gCalendar(self.canvas,self.width,self.height,
-            self.month,self.year) #gCalendar(month,year)
+            self.today.month,self.today.year)
         self.createAgenda()
         self.cal.draw(self)
         #draw agenda label
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
-            self.height*1./20,text="Agenda (" + str(self.maxHours) +\
-             " hour days)",font=("Helvetica", 20, "bold"))
+            self.height*1./20,
+            text="Agenda ({} hour days)".format(self.maxHours),
+            font=("Helvetica", 20, "bold"))
         self.agenda = Agenda(self.canvas,self.width,self.height,1,1,2012)
         self.agenda.clear()
         #self.agenda.draw([0]) #draw today's agenda when initializing
@@ -642,7 +599,6 @@ class CalendarPlanner(object):
         b14 = Button(self.canvas, text="Toggle Work Days", command=self.toggleWorkDay)
         b15 = Button(self.canvas, text="Toggle Today", command=self.toggleToday)
         calwidth = (self.cal.right + self.cal.left) / 2
-        #print calwidth
         col1 = self.cal.left + 1*(calwidth / 2) - 60
         col2 = self.cal.left + 2*(calwidth / 2) - 30
         col3 = self.cal.left + 3*(calwidth / 2)
@@ -675,12 +631,13 @@ class CalendarPlanner(object):
         self.root.resizable(width=FALSE, height=FALSE)
         self.canvas = Canvas(self.root, width=self.width, height=self.height)
         self.init()
-        if os.path.exists("cal.pkl"):
+        if os.path.exists("schedule.dat"):
             self.loadData()
         self.canvas.delete(self.agendaTitle)
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
-            self.height*1./20,text="Agenda (" + str(self.maxHours) +\
-             " hour days)",font=("Helvetica", 20, "bold"))
+            self.height*1./20,
+            text="Agenda ({} hour days)".format(self.maxHours),
+            font=("Helvetica", 20, "bold"))
         # set up events
         def mousePressedWrapper(event):
             self.mousePressed(event)
