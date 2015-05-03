@@ -17,7 +17,8 @@ class Task(object): #recurring attribute here?
         return "{}, Hours Left: {}, Days Left: {}".format(self.description,
             self.hours - self.hoursDone, (self.due - datetime.date.today()).days)
 
-class Assignment(Task): pass #same as Task?
+class Assignment(Task):
+    pass #same as Task?
 
 class FixedTask(Task):
     def __init__(self,description,startTime,endTime,recurring=None):
