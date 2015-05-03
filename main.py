@@ -49,7 +49,8 @@ class CalendarPlanner(object):
         self.cal.foundTask = False
         calSearch = tkSimpleDialog.askstring("Task Finder",
          "What is the name of your task?")
-        if calSearch is None: return
+        if calSearch is None:
+            return
         self.cal.draw(self,calSearch)
         if self.cal.foundTask is False:
             tkMessageBox.showinfo("Task Not Found",
@@ -255,7 +256,8 @@ class CalendarPlanner(object):
         original = self.maxHours
         maxHours = tkSimpleDialog.askinteger("Hour Set",
          "How many hours will you work per day? Currently {} hours.".format(self.maxHours))
-        if maxHours is None: return
+        if maxHours is None:
+            return
         if maxHours > 24 or maxHours < 0:
             tkMessageBox.showerror("Impossible",
              "Please enter an integer 0-24.")
@@ -281,13 +283,16 @@ class CalendarPlanner(object):
     def addAssignment(self): #graphical implementation
         description = tkSimpleDialog.askstring("Task Adder",
          "What is the name of your task?")
-        if description is None: return
+        if description is None:
+            return
         hours = tkSimpleDialog.askinteger("Task Adder",
          "How many hours will it take to complete?")
-        if hours is None: return
+        if hours is None:
+            return
         dueString = tkSimpleDialog.askstring("Task Adder",
          "When is it due? Enter MM/DD or MM/DD/YYYY")
-        if dueString is None: return
+        if dueString is None:
+            return
         month = int(dueString[0:2])
         day = int(dueString[3:5])
         if len(dueString) == 10:
@@ -316,10 +321,12 @@ class CalendarPlanner(object):
     def addFixedTask(self): #same, but with a fixed task
         description = tkSimpleDialog.askstring("Task Adder",
          "What is the name of your task?")
-        if description is None: return
+        if description is None:
+            return
         dueString = tkSimpleDialog.askstring("Task Adder",
          "What day is it? Enter MM/DD or MM/DD/YYYY")
-        if dueString is None: return
+        if dueString is None:
+            return
         month = int(dueString[0:2])
         day = int(dueString[3:5])
         if len(dueString) == 10:
@@ -381,9 +388,11 @@ class CalendarPlanner(object):
     def addRecurringTask(self):
         description = tkSimpleDialog.askstring("Task Adder",
          "What is the name of your task?")
-        if description is None: return
+        if description is None:
+            return
         recurringDays = tkSimpleDialog.askstring("Recurring Days","Enter comma separated days: e.g. \"0,1,2,3,4,5,6\"")
-        if recurringDays is None: return
+        if recurringDays is None:
+            return
         recurring = []
         for i in xrange(0,len(recurringDays),2):
             recurring += [int(recurringDays[i])]
@@ -393,7 +402,8 @@ class CalendarPlanner(object):
             return
         dueString = tkSimpleDialog.askstring("Task Adder",
          "Repeat until which day? Enter MM/DD or MM/DD/YYYY")
-        if dueString is None: return
+        if dueString is None:
+            return
         month = int(dueString[0:2])
         day = int(dueString[3:5])
         if len(dueString) == 10:
@@ -549,7 +559,8 @@ class CalendarPlanner(object):
     def toggleWorkDay(self):
         dayint = tkSimpleDialog.askinteger("Workday Toggler",
             "Which day do you want to toggle?")
-        if dayint is None: return
+        if dayint is None:
+            return
         if not (0 <= dayint <= 6):
             tkMessageBox.showerror("Invalid Input", "Please enter a day 0-6.")
             return
