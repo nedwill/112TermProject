@@ -14,9 +14,8 @@ class Task(object): #recurring attribute here?
         return str(self.due.year) + str(self.due.month) + str(self.due.day)
 
     def __repr__(self):
-        return str(self.description) + ", Hours Left: " + str(self.hours - \
-            self.hoursDone) + ", Days Left: " + str((self.due - \
-                datetime.date.today()).days)
+        return "{}, Hours Left: {}, Days Left: {}".format(self.description,
+            self.hours - self.hoursDone, (self.due - datetime.date.today()).days)
 
 class Assignment(Task): pass #same as Task?
 
@@ -34,12 +33,11 @@ class FixedTask(Task):
         due = startTime.date()
         hoursDone = 0 #can't have hours completed in advance on a fixed event
         self.recurring = recurring
-        super(FixedTask, self).__init__(description,hours,hoursDone,due)
+        super(FixedTask, self).__init__(description, hours, hoursDone, due)
 
     def __repr__(self):
-        return str(self.description) + ", Hours Left: " + str(self.hours \
-            - self.hoursDone) + ", Days Left: " + str((self.due - \
-                datetime.date.today()).days)
+        return "{}, Hours Left: {}, Days Left: {}".format(self.description,
+            self.hours - self.hoursDone, (self.due - datetime.date.today()).days)
 
 class TaskList(object):
     def __init__(self):
