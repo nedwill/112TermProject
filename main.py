@@ -609,7 +609,7 @@ class CalendarPlanner(object):
     def init(self):
         #draw calendar label
         self.cal = gCalendar(self.canvas,self.width,self.height,
-        self.month,self.year) #gCalendar(month,year)
+            self.month,self.year) #gCalendar(month,year)
         self.createAgenda()
         self.cal.draw(self)
         #draw agenda label
