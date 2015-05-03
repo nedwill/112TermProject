@@ -130,7 +130,6 @@ class TaskList(object):
         #cycle by index so we can check if we're on the last element
         for i in xrange(len(assignments)):
             task = assignments[i]
-            print task.description
             if task.due < datetime.date.today(): continue
             #subtract one here to finish in advance
             days_away = (task.due - start_day).days
