@@ -90,13 +90,14 @@ class TaskList(object):
         if work_days is None:
             work_days = [0,1,2,3,4,5,6]
         start_day = datetime.date.today()
+        assignments = self.assignments.values()
         if self.latest_task == start_day:
             plan_tasks = [[]]
             plan_hours = [0]
         else:
             plan_tasks = [[] for day in xrange((self.latest_task - start_day).days+1)] #[]*days until last assigned task
             plan_hours = [0]*((self.latest_task - start_day).days+1)
-            self.assignments = sorted(self.assignments, key=lambda task: task.due)
+            assignments = sorted(assignments, key=lambda task: task.due)
         for task in self.fixed.values():
             days_away = (task.due - start_day).days
             if days_away < 0:
@@ -127,7 +128,6 @@ class TaskList(object):
                     return None
 
         #cycle by index so we can check if we're on the last element
-        assignments = self.assignments.values()
         for i in xrange(len(assignments)):
             task = assignments[i]
             print task.description

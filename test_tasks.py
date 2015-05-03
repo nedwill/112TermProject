@@ -12,14 +12,17 @@ from main import CalendarPlanner
 year = integers_in_range(2010, 2020)
 month = integers_in_range(1, 12)
 day = integers_in_range(1, 31)
-hour = integers_in_range(0, 24)
+hour = integers_in_range(0, 23)
 
 @given([(str, (year, month, day, hour), (year, month, day, hour))])
 def test_calcagenda_fixed(l):
     cal = CalendarPlanner()
     tasks = TaskList()
     for name, time1, time2 in l:
-        task = FixedTask(name, datetime.datetime(*time1), datetime.datetime(*time2))
+        try:
+            task = FixedTask(name, datetime.datetime(*time1), datetime.datetime(*time2))
+        except ValueError:
+            pass
         tasks.add(task)
     cal.tasks = tasks
     cal.createAgenda()
