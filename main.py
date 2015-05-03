@@ -12,6 +12,8 @@ from tasks import TaskList, FixedTask, Task
 from Tkinter import Tk, FALSE, Canvas, Button
 from graphics import gCalendar, Agenda
 
+SAVEFILE = "schedule.dat"
+
 class CalendarPlanner(object):
     def __init__(self,width=900,height=600,selectedDayDistance=0,
         maxHours=8,maxDays=False):
@@ -66,7 +68,7 @@ class CalendarPlanner(object):
 
     def saveData(self):
         return #not working right now
-        with open("schedule.dat", "w") as f:
+        with open(SAVEFILE, "w") as f:
             data = {
                 "tasks": self.tasks,
                 "max_hours": self.maxHours,
@@ -77,7 +79,7 @@ class CalendarPlanner(object):
 
     def loadData(self):
         #try:
-        with open("schedule.dat", "r") as f:
+        with open(SAVEFILE, "r") as f:
             data = json.loads(f.read())
             self.tasks = data["tasks"]
             self.maxHours = data["hours"]
@@ -633,7 +635,7 @@ class CalendarPlanner(object):
         self.root.resizable(width=FALSE, height=FALSE)
         self.canvas = Canvas(self.root, width=self.width, height=self.height)
         self.init()
-        if os.path.exists("schedule.dat"):
+        if os.path.exists(SAVEFILE):
             self.loadData()
         self.canvas.delete(self.agendaTitle)
         self.agendaTitle = self.canvas.create_text(self.width*17./20,
