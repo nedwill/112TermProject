@@ -27,4 +27,8 @@ def test_calcagenda_fixed(l):
     cal.tasks = tasks
     cal.createAgenda()
 
+def test_calcagenda_assignments():
+    pass
+
 test_calcagenda_fixed()
+test_calcagenda_assignments()
