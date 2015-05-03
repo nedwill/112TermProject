@@ -501,18 +501,25 @@ class CalendarPlanner(object):
         self.cal.draw(self)
         self.saveData()
 
-    #@classmethod
-    def testAgenda(self):
-        tasks = [FixedTask("meeting",datetime.datetime(2012,11,28,17),
-            datetime.datetime(2012,11,28,18)),
-                Task("C@CM",1,0,datetime.date.today()),Task("ECE study",
-                    5,0,datetime.date(2012,11,25)),
-                Task("Calc WebAssign",2,0,datetime.date(2012,11,28)),
-                Task("CS project",25,0,datetime.date(2012,12,03))]
-        myTasks = TaskList()
-        for task in tasks:
-            myTasks.add(task)
+    def testAgenda(self, data):
+        try: #bugs in loading data aren't interesting
+            data = json.loads(data)
+            tasks = set()
+            for task in data:
+                try:
+                    if task["type"] == "fixed":
+                        tasks.add(FixedTask(task["name"], datetime.datetime(*task["time1"]), datetime.datetime(*task["time2"])))
+                    elif task["type"] == "task":
+                        tasks.add(Task(task["name"], task["hours"], task["hours_done"], datetime.date(*task["due"])))
+                except:
+                    continue
+            myTasks = TaskList()
+            for task in tasks:
+                myTasks.add(task)
+        except:
+            exit()
         self.tasks = myTasks
+        self.createAgenda()
 
     def previousMonth(self):
         if self.selected_day.month > 1:
