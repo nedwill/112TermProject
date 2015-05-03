@@ -21,9 +21,9 @@ def test_calcagenda_fixed(l):
     for name, time1, time2 in l:
         try:
             task = FixedTask(name, datetime.datetime(*time1), datetime.datetime(*time2))
+            tasks.add(task)
         except ValueError:
             pass
-        tasks.add(task)
     cal.tasks = tasks
     cal.createAgenda()
 
