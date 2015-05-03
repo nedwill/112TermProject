@@ -7,12 +7,12 @@ class GraphicsElement(object): #basic graphical element
         self.canvas = canvas #element must know how to access its canvas
         self.width = width #element must know its canvas size to position itself
         self.height = height
-        self.elements = [] #keep track of canvas elements to clear
+        self.elements = set() #keep track of canvas elements to clear
 
     #add elements to a list so we have a list
     #associated with each GraphicsElement
-    def add(self,element):
-        self.elements += [element]
+    def add(self, element):
+        self.elements.add(element)
 
     def clear(self): #use the list of elements for this GraphicsElement to clear only this object from the canvas
         for element in self.elements: #most basic
