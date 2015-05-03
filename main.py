@@ -14,14 +14,20 @@ from graphics import gCalendar, Agenda
 
 SAVEFILE = "schedule.dat"
 
+class Day(object):
+    def __init__(self, year, month, day):
+        self.year = year
+        self.month = month
+        self.day = day
+
 class CalendarPlanner(object):
     def __init__(self,width=900,height=600,selectedDayDistance=0,
         maxHours=8,maxDays=False):
         self.width = width
         self.height = height
-        self.selected_day = datetime.date.today()
+        today = datetime.date.today()
+        self.selected_day = Day(today.year, today.month, today.day)
         self.tasks = TaskList()
-        self.selectedDayDistance = selectedDayDistance
         self.maxHours = maxHours
         self.maxDays = maxDays
         calendarPlanner = calendar.monthcalendar(self.selected_day.year, self.selected_day.month)
