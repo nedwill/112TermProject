@@ -434,8 +434,7 @@ class CalendarPlanner(object):
         if len(timeString) == 5 and timeString[2] == "-":
             startTime = int(timeString[0:2])
             endTime = int(timeString[3:5])
-            if (startTime < 0 or endTime < 0 or startTime > 24 or\
-             endTime > 24 or startTime > endTime):
+            if (startTime < 0 or endTime < 0 or startTime > 24 or endTime > 24 or startTime > endTime):
                 tkMessageBox.showerror("Time Entry Error",
                  "Invalid Time Range Entered!")
                 return
@@ -443,8 +442,7 @@ class CalendarPlanner(object):
             int(timeString[0:2])) #fix this for efficiency?
             endTime = datetime.datetime(due.year,due.month,due.day,
                 int(timeString[3:5]))
-        elif len(timeString) == 11 and timeString[2] == ":" and\
-         timeString[5] == "-" and timeString[8] == ":":
+        elif len(timeString) == 11 and timeString[2] == ":" and timeString[5] == "-" and timeString[8] == ":":
             startHour = int(timeString[0:2])
             startMinutes = int(timeString[3:5])
             endHour = int(timeString[6:8])
@@ -519,16 +517,19 @@ class CalendarPlanner(object):
         self.tasks = myTasks
         self.createAgenda()
 
+    def redraw_calendar(self):
+        self.cal.clear()
+        self.cal = gCalendar(self.canvas,self.width,self.height,
+            self.selected_day.month,self.selected_day.year)
+        self.cal.draw(self)
+
     def previousMonth(self):
         if self.selected_day.month > 1:
             self.selected_day.month -= 1
         else:
             self.selected_day.month = 12
             self.selected_day.year -= 1
-        self.cal.clear()
-        self.cal = gCalendar(self.canvas,self.width,self.height,
-            self.selected_day.month,self.selected_day.year)
-        self.cal.draw(self)
+        self.redraw_calendar()
 
     def nextMonth(self):
         if self.selected_day.month < 12:
@@ -536,10 +537,7 @@ class CalendarPlanner(object):
         else:
             self.selected_day.month = 1
             self.selected_day.year += 1
-        self.cal.clear()
-        self.cal = gCalendar(self.canvas,self.width,self.height,
-            self.selected_day.month,self.selected_day.year)
-        self.cal.draw(self)
+        self.redraw_calendar()
 
     def toggleDayHelper(self,dayint):
         if dayint in self.workDays:
