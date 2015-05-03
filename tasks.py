@@ -43,43 +43,32 @@ class FixedTask(Task):
 
 class TaskList(object):
     def __init__(self):
-        self.fixed = [] #fixed tasks
-        self.assignments = [] #assignments with due dates
-        self.latestTask = datetime.date.today() #initialize last task date to today
-        self.descriptionList = []
-        #due dates written as month,day,year
-        #calculate distance between two days
+        self.fixed = {} #fixed tasks
+        self.assignments = {} #assignments with due dates
+        self.latest_task = datetime.date.today() #initialize last task date to today
 
-    def add(self,task):
-        descriptionList = []
-        for check in self.fixed:
-            descriptionList += check.description
-        for check in self.assignments:
-            descriptionList += check.description
-        if task.description in descriptionList: #make sure we don't have a duplicate assignment name
-            #print "duped :("
-            return
-        #else:
-        #    self.descriptionList += [task.description]
+    def add(self, task):
         if isinstance(task, FixedTask):
-            self.fixed += [task]
-            #print "Added fixed."
+            if task.description in self.fixed:
+                return
+            self.fixed[task.description] = task
         elif isinstance(task, Task):
-            self.assignments += [task]
+            if task.description in self.assignments:
+                return
+            self.assignments[task.description] = task
         if task.due > self.latestTask: #due date > lastestTask
             self.latestTask = task.due
 
+    #now removing goes by the exact string
+    #we should have a function that does fuzzy matching
     def remove(self,description):
-        for task in self.fixed: #find, remove, and return task from description
-            if task.description[:len(description)] == description:
-                self.fixed.remove(task)
-                #self.descriptionList.remove(task.description)
-                return task
-        for task in self.assignments:
-            if task.description[:len(description)] == description:
-                self.assignments.remove(task)
-                #self.descriptionList.remove(task.description)
-                return task
+        if description in self.fixed:
+            ret = self.fixed[description]
+            del self.fixed[description]
+        elif description in self.assignments:
+            ret = self.assignments[description]
+            del self.assignments[description]
+        return ret
 
     def addHours(self,description,hours):
         for task in self.fixed: #find, remove, and return task from description
@@ -95,19 +84,19 @@ class TaskList(object):
                     self.remove(description)
                 return task
 
-    def calcAgenda(self,maxHours,maxDays=False,workDays=None,workToday=True):
+    def calcAgenda(self,maxHours,maxDays=False,work_days=None,workToday=True):
         """
         maxDays maximizes work in given time at expense of easy/time efficiency
         """
-        if workDays is None:
-            workDays = [0,1,2,3,4,5,6]
+        if work_days is None:
+            work_days = [0,1,2,3,4,5,6]
         start_day = datetime.date.today()
-        if self.latestTask == start_day:
+        if self.latest_task == start_day:
             plan_tasks = [[]]
             plan_hours = [0]
         else:
-            plan_tasks = [[] for day in xrange((self.latestTask - start_day).days+1)] #[]*days until last assigned task
-            plan_hours = [0]*((self.latestTask - start_day).days+1)
+            plan_tasks = [[] for day in xrange((self.latest_task - start_day).days+1)] #[]*days until last assigned task
+            plan_hours = [0]*((self.latest_task - start_day).days+1)
             self.assignments = sorted(self.assignments, key=lambda task: task.due)
         for task in self.fixed:
             days_away = (task.due - start_day).days
@@ -150,23 +139,24 @@ class TaskList(object):
                     continue
                 if day == 0 and workToday is False: continue
                 dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(day))
-                if dayOfWeek not in workDays:
+                if dayOfWeek not in work_days:
                     if day == days_away and hoursLeft != 0:
                         return None
                     else:
                         continue
                 daysLeft = (days_away - day)
-                workdaysremaining = 0
+                workdays_remaining = 0
                 for checkday in xrange(daysLeft):
-                    if (dayOfWeek + checkday) % 7 in workDays:
-                        workdaysremaining += 1
-                if workdaysremaining == 0: return None
-                if workdaysremaining == 1:
+                    if (dayOfWeek + checkday) % 7 in work_days:
+                        workdays_remaining += 1
+                if workdays_remaining == 0:
+                    return None
+                if workdays_remaining == 1:
                     hoursPerDay = hoursLeft
                 elif (i == (len(self.assignments) - 1) and maxDays is True):
                     hoursPerDay = min(maxHours - plan_hours[day],hoursLeft)
                 else:
-                    hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdaysremaining))))
+                    hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdays_remaining))))
                 if hoursPerDay == 0: continue
                 if hoursPerDay + plan_hours[day] <= maxHours:
                     hoursDone += hoursPerDay
@@ -174,8 +164,5 @@ class TaskList(object):
                     plan_tasks[day] += [(task,hoursPerDay)]
                     #add tuple of task and hours allotted for that day
                 elif day == days_away:
-                    # if there are no days left, we can't
-                    # complete this assignment
                     return None
-        #print plan_hours
         return plan_tasks
