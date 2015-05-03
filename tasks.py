@@ -11,7 +11,7 @@ class Task(object): #recurring attribute here?
         #checking it off?)
 
     def __str__(self): #used to make ical
-        return str(self.due.year) + str(self.due.month) + str(self.due.day)
+        return self.description
 
     def __repr__(self):
         return "{}, Hours Left: {}, Days Left: {}".format(self.description,
@@ -26,15 +26,16 @@ class FixedTask(Task):
         #done in make iCal as needed
         self.startTime = startTime
         self.endTime = endTime
-        new = " " + str(startTime.hour) + ":" + "%02d" % startTime.minute \
-        + "-" + str(endTime.hour) + ":" +  "%02d" % endTime.minute
-        description += new
         #use actual timedelta to find hours
         hours = ((endTime - startTime).seconds)/3600
         due = startTime.date()
         hoursDone = 0 #can't have hours completed in advance on a fixed event
         self.recurring = recurring
         super(FixedTask, self).__init__(description, hours, hoursDone, due)
+
+    def __str__(self):
+        return self.description + " {}:{:02d}-{}:{:02d}".format(self.startTime.hour,
+            self.startTime.minute, self.endTime.hour, self.endTime.minute)
 
     def __repr__(self):
         return "{}, Hours Left: {}, Days Left: {}".format(self.description,
@@ -64,10 +65,11 @@ class TaskList(object):
         if description in self.fixed:
             ret = self.fixed[description]
             del self.fixed[description]
+            return ret
         elif description in self.assignments:
             ret = self.assignments[description]
             del self.assignments[description]
-        return ret
+            return ret
 
     def addHours(self,description,hours):
         for task in self.fixed: #find, remove, and return task from description

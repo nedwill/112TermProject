@@ -51,7 +51,7 @@ class Agenda(GraphicsElement):
         self.clear()
         for i in xrange(len(selectedAgenda)):
             item = selectedAgenda[i]
-            tempDescription = item[0].description
+            tempDescription = str(item[0])
             if len(tempDescription) > 15:
                 tempDescription = tempDescription[:14] + "..."
             newTop = self.top + 20*(i+1)
