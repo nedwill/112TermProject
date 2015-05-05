@@ -61,7 +61,7 @@ class TaskList(object):
 
     #now removing goes by the exact string
     #we should have a function that does fuzzy matching
-    def remove(self,description):
+    def remove(self, description):
         if description in self.fixed:
             ret = self.fixed[description]
             del self.fixed[description]
@@ -71,18 +71,12 @@ class TaskList(object):
             del self.assignments[description]
             return ret
 
-    def addHours(self,description,hours):
-        for task in self.fixed: #find, remove, and return task from description
-            if task.description[:len(description)] == description:
-                task.hoursDone += hours
-                if task.hoursDone >= task.hours:
-                    self.remove(description)
-                return task
-        for task in self.assignments:
-            if task.description[:len(description)] == description:
-                task.hoursDone += hours
-                if task.hoursDone >= task.hours:
-                    self.remove(description)
+    def addHours(self, description, hours):
+        if description in self.assignments:
+            task = self.assignments[description]
+            task.hoursDone += hours
+            if task.hoursDone >= task.hours:
+                self.remove(description)
                 return task
 
     def calc_agenda_fixed(self, start_day, max_hours, plan_tasks):
