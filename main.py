@@ -51,7 +51,7 @@ class CalendarPlanner(object):
     def getAgendaDays(self):
         today = datetime.date.today()
         days = []
-        for i in xrange(len(self.agendaCalc)):
+        for i in xrange(len(self.current_agenda)):
             days += [today + datetime.timedelta(i)]
         return days
 
@@ -105,12 +105,11 @@ class CalendarPlanner(object):
                                      "The data file exists but it could not be loaded!")
             exit()
 
-    def createAgenda(self):
-        self.agendaCalc = self.tasks.calcAgenda(
-            self.max_hours, self.maxDays, self.workDays, self.work_today)
-
     def create_agenda_safe(self):
         return self.tasks.calcAgenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
+
+    def createAgenda(self):
+        self.current_agenda = self.create_agenda_safe()
 
     def drawDragDrop(self, event):
         if self.taskDraw is not None:
@@ -247,8 +246,8 @@ class CalendarPlanner(object):
             selectedDayDistance = (selectedDay - datetime.date.today()).days
             # if selectedDayDistance > 0 and selectedDayDistance < len(agenda):
             selectedAgenda = None
-            if selectedDayDistance >= 0 and selectedDayDistance < len(self.agendaCalc):
-                selectedAgenda = self.agendaCalc[selectedDayDistance]
+            if selectedDayDistance >= 0 and selectedDayDistance < len(self.current_agenda):
+                selectedAgenda = self.current_agenda[selectedDayDistance]
                 self.selectedAgenda = selectedAgenda
             return selectedAgenda
 
@@ -259,8 +258,8 @@ class CalendarPlanner(object):
                                         self.cal.monthArray[row][col])
             selectedDayDistance = (selectedDay - datetime.date.today()).days
             selectedAgenda = None
-            if selectedDayDistance >= 0 and selectedDayDistance < len(self.agendaCalc):
-                selectedAgenda = self.agendaCalc[selectedDayDistance]
+            if selectedDayDistance >= 0 and selectedDayDistance < len(self.current_agenda):
+                selectedAgenda = self.current_agenda[selectedDayDistance]
             return selectedAgenda
 
     def update_agenda_title(self):
@@ -564,7 +563,7 @@ class CalendarPlanner(object):
 
     # call failure if we can't schedule
     def attempt_to_schedule(self, failure=None, err_msg="Unknown scheduling error."):
-        assert self.agendaCalc is not None  # already working
+        assert self.current_agenda is not None  # already working
         if failure is None:
             def failure():
                 pass
@@ -573,7 +572,7 @@ class CalendarPlanner(object):
             tkMessageBox.showerror("Impossible to Schedule", err_msg)
             failure()
             return
-        self.agendaCalc = agenda
+        self.current_agenda = agenda
         self.selectAgenda(self.week, self.day)
         self.agenda.draw(self.selectedAgenda)
         self.cal.draw(self)

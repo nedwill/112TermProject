@@ -74,6 +74,7 @@ class TaskList(object):
                 self.remove(description)
                 return task
 
+    #recurring tasks have an end
     def _calc_agenda_recurring(self, days_away, task, plan_tasks, max_hours):
         for i in xrange(days_away+1):
             dayOfWeek = datetime.date.weekday(self.today + datetime.timedelta(i))
@@ -102,7 +103,7 @@ class TaskList(object):
             if task.hours + self._plan_hours(plan_tasks, days_away) > max_hours:
                 return None
             plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
-            return plan_tasks
+        return plan_tasks
 
     def _plan_hours_day(self, day_tasks):
         return sum(x[1] for x in day_tasks)
@@ -183,6 +184,7 @@ class TaskList(object):
         #if we couldn't plan out every assignment
         if len(assignments) > 0:
             return None
+        return plan_tasks
 
     def calcAgenda(self, max_hours, max_days=False, work_days=None, work_today=True):
         """
