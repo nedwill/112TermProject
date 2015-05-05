@@ -85,21 +85,7 @@ class TaskList(object):
                     self.remove(description)
                 return task
 
-    def calcAgenda(self,maxHours,maxDays=False,work_days=None,workToday=True):
-        """
-        maxDays maximizes work in given time at expense of easy/time efficiency
-        """
-        if work_days is None:
-            work_days = [0,1,2,3,4,5,6]
-        start_day = datetime.date.today()
-        assignments = self.assignments.values()
-        if self.latest_task == start_day:
-            plan_tasks = [[]]
-            plan_hours = [0]
-        else:
-            plan_tasks = [[] for day in xrange((self.latest_task - start_day).days+1)] #[]*days until last assigned task
-            plan_hours = [0]*((self.latest_task - start_day).days+1)
-            assignments = sorted(assignments, key=lambda task: task.due)
+    def calc_agenda_fixed(self, start_day, max_hours, plan_tasks):
         for task in self.fixed.values():
             days_away = (task.due - start_day).days
             if days_away < 0:
@@ -117,19 +103,23 @@ class TaskList(object):
                     #4 extra chars, find length to chop before recalling constructor
                     choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
                     newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
-                    if newtask.hours + plan_hours[i] <= maxHours:
-                        plan_hours[i] += newtask.hours
+                    if newtask.hours + self.plan_hours(plan_tasks[i]) <= max_hours:
                         plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
                     else:
                         return None
             else:
-                if task.hours + plan_hours[days_away] <= maxHours:
-                    plan_hours[days_away] += task.hours
+                if task.hours + self.plan_hours(plan_tasks[days_away]) <= max_hours:
                     plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
                 else:
                     return None
+        return plan_tasks
 
+    def plan_hours(self, day):
+        return sum(x[1] for x in day)
+
+    def calc_agenda_assignments(self, assignments, start_day, work_today, work_days, max_days, max_hours, plan_tasks):
         #cycle by index so we can check if we're on the last element
+        assignments = sorted(assignments, key=lambda task: task.due)
         for i in xrange(len(assignments)):
             task = assignments[i]
             if task.due < datetime.date.today(): continue
@@ -140,7 +130,7 @@ class TaskList(object):
                 hoursLeft = task.hours - hoursDone
                 if hoursLeft == 0:
                     continue
-                if day == 0 and workToday is False: continue
+                if day == 0 and work_today is False: continue
                 dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(day))
                 if dayOfWeek not in work_days:
                     if day == days_away and hoursLeft != 0:
@@ -156,16 +146,28 @@ class TaskList(object):
                     return None
                 if workdays_remaining == 1:
                     hoursPerDay = hoursLeft
-                elif (i == (len(assignments) - 1) and maxDays is True):
-                    hoursPerDay = min(maxHours - plan_hours[day],hoursLeft)
+                elif (i == (len(assignments) - 1) and max_days is True):
+                    hoursPerDay = min(max_hours - self.plan_hours(plan_tasks[day]),hoursLeft)
                 else:
-                    hoursPerDay = min(maxHours - plan_hours[day],int(math.ceil(float(hoursLeft)/(workdays_remaining))))
+                    hoursPerDay = min(max_hours - self.plan_hours(plan_tasks[day]),int(math.ceil(float(hoursLeft)/(workdays_remaining))))
                 if hoursPerDay == 0: continue
-                if hoursPerDay + plan_hours[day] <= maxHours:
+                if hoursPerDay + self.plan_hours(plan_tasks[day]) <= max_hours:
                     hoursDone += hoursPerDay
-                    plan_hours[day] += hoursPerDay
                     plan_tasks[day] += [(task,hoursPerDay)]
                     #add tuple of task and hours allotted for that day
                 elif day == days_away:
                     return None
+        return plan_tasks
+
+    def calcAgenda(self,max_hours,max_days=False,work_days=None,work_today=True):
+        """
+        max_days maximizes work in given time at expense of easy/time efficiency
+        """
+        if work_days is None:
+            work_days = [0,1,2,3,4,5,6]
+        start_day = datetime.date.today()
+        days_needed = (self.latest_task - start_day).days+1
+        plan_tasks = [[] for day in xrange(days_needed)] #initialize with number of needed days
+        plan_tasks = self.calc_agenda_fixed(start_day, max_hours, plan_tasks)
+        plan_tasks = self.calc_agenda_assignments(self.assignments.values(), start_day, work_today, work_days, max_days, max_hours, plan_tasks)
         return plan_tasks
