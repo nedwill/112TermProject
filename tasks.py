@@ -152,7 +152,7 @@ class TaskList(object):
                 assignments_new.append((task, hours_remaining))
         #here's where we can flag on max_days
         #_plan_hours_day is O(n), could do this faster with a local var
-        while self._plan_hours_day(day_tasks) < max_hours:
+        while self._plan_hours_day(day_tasks) < max_hours and len(assignments_new) > 0:
             assignments = assignments_new
             assignments_new = []
             for task, hours_remaining in assignments:
@@ -161,7 +161,7 @@ class TaskList(object):
                     day_tasks = self._inc_day_task(day_tasks, task)
                 else:
                     assignments_new.append((task, hours_remaining))
-        return day_tasks, assignments
+        return day_tasks, assignments_new
 
     def _calc_agenda_assignments(self, assignments, work_today,
         work_days, max_days, max_hours, plan_tasks):
@@ -175,12 +175,14 @@ class TaskList(object):
         max_days_needed = (self.latest_task - self.today).days+1
         assignments = sorted(assignments, key=lambda task: task.due)
         assignments = [(task, task.hours - task.hours_done) for task in assignments if task.due > start_day]
+        #are we handling work_today right here?
         for day in range(max_days_needed):
             today_day_of_week = datetime.date.weekday(self.today)
             day_of_week = (today_day_of_week + day) % 7
             if day_of_week not in work_days:
                 continue
-            plan_tasks[day], assignments = self._fill_day_assignments(plan_tasks[day], assignments, max_hours)
+            start_day = self.today + datetime.timedelta(day)
+            plan_tasks[day], assignments = self._fill_day_assignments(plan_tasks[day], assignments, start_day, max_hours)
         #if we couldn't plan out every assignment
         if len(assignments) > 0:
             return None
