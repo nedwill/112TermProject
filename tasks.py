@@ -1,5 +1,4 @@
 import datetime
-import math
 
 class Task(object): #recurring attribute here?
     def __init__(self,description,hours,hours_done,due):

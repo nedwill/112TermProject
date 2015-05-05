@@ -1,4 +1,4 @@
-from hypothesis import given, assume
+from hypothesis import given
 from hypothesis.specifiers import integers_in_range
 import datetime
 from tasks import FixedTask, TaskList, Task
