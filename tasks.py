@@ -75,7 +75,7 @@ class TaskList(object):
                 self.remove(description)
                 return task
 
-    def calc_agenda_recurring(self, days_away, task, plan_tasks, max_hours):
+    def _calc_agenda_recurring(self, days_away, task, plan_tasks, max_hours):
         for i in xrange(days_away+1):
             dayOfWeek = datetime.date.weekday(self.today + datetime.timedelta(i))
             if dayOfWeek not in task.recurring:
@@ -88,111 +88,102 @@ class TaskList(object):
             #4 extra chars, find length to chop before recalling constructor
             choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
             newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
-            if newtask.hours + self.plan_hours(plan_tasks[i]) <= max_hours:
+            if newtask.hours + self._plan_hours(plan_tasks[i]) <= max_hours:
                 plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
             else:
                 return None
 
-    def calc_agenda_fixed(self, max_hours, plan_tasks):
+    def _calc_agenda_fixed(self, max_hours, plan_tasks):
         for task in self.fixed.values():
             days_away = (task.due - self.today).days
             if days_away < 0:
                 continue
             if task.recurring is not None and len(task.recurring) > 0:
-                return self.calc_agenda_recurring(days_away, task, plan_tasks, max_hours)
-            if task.hours + self.plan_hours(plan_tasks[days_away]) > max_hours:
+                return self._calc_agenda_recurring(days_away, task, plan_tasks, max_hours)
+            if task.hours + self._plan_hours(plan_tasks[days_away]) > max_hours:
                 return None
             plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
             return plan_tasks
 
-    def plan_hours(self, day):
-        return sum(x[1] for x in day)
+    def _plan_hours_day(self, day_tasks):
+        return sum(x[1] for x in day_tasks)
 
-    def ceil_div(x, y):
+    def _plan_hours(self, plan_tasks, day):
+        return self._plan_hours_day(plan_tasks[day])
+
+    def _ceil_div(x, y):
+        assert x >= 0 and y > 0
         return (x / y) + (1 if x % y > 0 else 0)
 
-    def get_days_left(day, days_away, day_of_week, work_days):
-        days_left = (days_away - day)
-        workdays_remaining = 0
-        for checkday in xrange(days_left):
-            if (day_of_week + checkday) % 7 in work_days:
-                workdays_remaining += 1
-        return workdays_remaining
-
-    def pick_hours_to_assign(self, plan_tasks, day, days_away, max_hours, day_of_week,
-        work_days, task):
-        hours_left_for_task = task.hours - task.hours_done
-        hours_available_to_schedule = max_hours - self.plan_hours(plan_tasks[day])
-        workdays_remaining = self.get_days_left(day, days_away, day_of_week, work_days)
-        if workdays_remaining == 0:
-            #if no days left, we fail at scheduling
-            return None
-        elif workdays_remaining == 1:
-            #if one day left, use the remaining hours because we have to
-            return hours_left_for_task
-        else:
-            return min(hours_available_to_schedule, self.ceil_div(hours_left_for_task, workdays_remaining))
-
-    #TODO: day of week handling, update testing code to handle start_day as well
-    def _get_hours_per_day_list(self, task, start_day, work_days):
-        """
-        today_day_of_week = datetime.date.weekday(self.today)
-        day_of_week = (today_day_of_week + day) % 7
-        if day_of_week not in work_days:
-            if day == days_away and hours_left_for_task != 0:
-                return None
+    #TODO: switch all of these functions to using dictionaries
+    def _update_day_tasks(self, day_tasks, task, new_hours):
+        new_day_tasks = []
+        for day_task, existing_hours in day_tasks:
+            if day_task == task:
+                #if new hours == 0, just drop the task
+                assert new_hours >= 0
+                if new_hours > 0:
+                    new_day_tasks.append((day_task, new_hours))
             else:
-                continue
-        """
-        hours_remaining = task.hours - task.hours_done
-        days_remaining = (task.due - start_day).days
-        if days_remaining == 0:
-            hours_per_day = 0
-            extra_days_needed = 0
-        else:
-            hours_per_day = hours_remaining / days_remaining
-            extra_days_needed = hours_remaining % days_remaining
-        hours_per_day_list = [hours_per_day for day in xrange(days_remaining)]
-        for i in xrange(extra_days_needed):
-            hours_per_day_list[i] += 1
-        return hours_per_day_list
+                new_day_tasks.append((day_task, existing_hours))
+        return new_day_tasks
 
-    def process_assignments(self, assignments, work_today,
-        work_days, plan_tasks, last_task, max_days, max_hours):
+    #again, this could obviously be done so much better with a dict
+    def _inc_day_task(self, day_tasks, task):
+        new_day_tasks = []
+        for day_task, existing_hours in day_tasks:
+            if day_task == task:
+                #if new hours == 0, just drop the task
+                new_day_tasks.append((day_task, existing_hours + 1))
+            else:
+                new_day_tasks.append((day_task, existing_hours))
+        return new_day_tasks
+
+    def _fill_day_assignments(self, day_tasks, assignments, start_day, max_hours):
+        assignments_new = []
+        for task, hours_remaining in assignments:
+            if self._plan_hours_day(day_tasks) < max_hours:
+                days_remaining = (task.due - start_day).days
+                assert days_remaining > 0
+                hours_per_day = self._ceil_div(hours_remaining, days_remaining)
+                assignments_new.append((task, hours_remaining - hours_per_day))
+                day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
+            else:
+                assignments_new.append((task, hours_remaining))
+        #here's where we can flag on max_days
+        #_plan_hours_day is O(n), could do this faster with a local var
+        while self._plan_hours_day(day_tasks) < max_hours:
+            assignments = assignments_new
+            assignments_new = []
+            for task, hours_remaining in assignments:
+                if self._plan_hours_day(day_tasks) < max_hours:
+                    assignments_new.append((task, hours_remaining-1))
+                    day_tasks = self._inc_day_task(day_tasks, task)
+                else:
+                    assignments_new.append((task, hours_remaining))
+        return day_tasks, assignments
+
+    def _calc_agenda_assignments(self, assignments, work_today,
+        work_days, max_days, max_hours, plan_tasks):
+        if len(assignments) == 0 or plan_tasks is None:
+            return plan_tasks
         start_offset = 0 if work_today else 1
         start_day = self.today + datetime.timedelta(start_offset)
         #design choice: if we aren't working today and there is work due
         #tomorrow, we ignore it. maybe we should instead raise an exception
         #in this case
-        assignments = [task for task in assignments if task.due > start_day]
-        for task in assignments:
-            days_away = (task.due - self.today).days
-            hours_per_day_list = self._get_hours_per_day_list(task, start_day)
-
-            for day in xrange(start_offset, days_away):
-                hours_per_day = hours_per_day_list[day - start_offset]
-                if hours_per_day + self.plan_hours(plan_tasks[day]) > max_hours:
-                    return None
-                plan_tasks[day] += [(task, hours_per_day)]
-                if plan_hours(plan_tasks[day]) == max_hours
-
-        return plan_tasks
-
-    def calc_agenda_assignments(self, assignments, work_today,
-        work_days, max_days, max_hours, plan_tasks):
-        if len(assignments) == 0 or plan_tasks is None:
-            return plan_tasks
-
-        def get_due(task):
-            return task.due
-
-        last_task = assignments[-1]
-
-        assignments = list(sorted(assignments, key=get_due))
-        return self.process_assignments(assignments, work_today,
-                work_days, plan_tasks, last_task, max_days, max_hours)
-
-        return plan_tasks
+        max_days_needed = (self.latest_task - self.today).days+1
+        assignments = sorted(assignments, key=lambda task: task.due)
+        assignments = [(task, task.hours - task.hours_done) for task in assignments if task.due > start_day]
+        for day in range(max_days_needed):
+            today_day_of_week = datetime.date.weekday(self.today)
+            day_of_week = (today_day_of_week + day) % 7
+            if day_of_week not in work_days:
+                continue
+            plan_tasks[day], assignments = self._fill_day_assignments(plan_tasks[day], assignments, max_hours)
+        #if we couldn't plan out every assignment
+        if len(assignments) > 0:
+            return None
 
     def calcAgenda(self, max_hours, max_days=False, work_days=None, work_today=True):
         """
@@ -204,7 +195,7 @@ class TaskList(object):
             work_days = [0, 1, 2, 3, 4, 5, 6]
         max_days_needed = (self.latest_task - self.today).days+1
         plan_tasks = [[] for day in xrange(max_days_needed)] #initialize with number of needed days
-        plan_tasks = self.calc_agenda_fixed(max_hours, plan_tasks)
-        plan_tasks = self.calc_agenda_assignments(self.assignments.values(), work_today,
+        plan_tasks = self._calc_agenda_fixed(max_hours, plan_tasks)
+        plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today,
             work_days, max_days, max_hours, plan_tasks)
         return plan_tasks
