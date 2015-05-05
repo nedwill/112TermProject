@@ -137,7 +137,8 @@ class TaskList(object):
     def calc_agenda_assignments(self, assignments, start_day, work_today, work_days, max_days, max_hours, plan_tasks):
         if len(assignments) == 0:
             return plan_tasks
-
+        if plan_tasks is None:
+            return None
         def get_due(task):
             return task.due
         assignments = sorted(assignments, key=get_due)
