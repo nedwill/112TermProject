@@ -259,8 +259,7 @@ class CalendarPlanner(object):
                                         self.cal.monthArray[row][col])
             selectedDayDistance = (selectedDay - datetime.date.today()).days
             selectedAgenda = None
-            if selectedDayDistance >= 0 and selectedDayDistance <\
-                    len(self.agendaCalc):
+            if selectedDayDistance >= 0 and selectedDayDistance < len(self.agendaCalc):
                 selectedAgenda = self.agendaCalc[selectedDayDistance]
             return selectedAgenda
 
