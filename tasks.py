@@ -120,7 +120,7 @@ class TaskList(object):
         return workdays_remaining
 
     def pick_hours_to_assign(self, plan_tasks, day, days_away, max_hours, day_of_week,
-        work_days, task, last_task, max_days):
+        work_days, task):
         hours_left_for_task = task.hours - task.hours_done
         hours_available_to_schedule = max_hours - self.plan_hours(plan_tasks[day])
         workdays_remaining = self.get_days_left(day, days_away, day_of_week, work_days)
@@ -130,16 +130,22 @@ class TaskList(object):
         elif workdays_remaining == 1:
             #if one day left, use the remaining hours because we have to
             return hours_left_for_task
-        elif (task == last_task and max_days):
-            #if last assignment and we're doing max_days, drop all hours possible on the task
-            return min(hours_available_to_schedule, hours_left_for_task)
         else:
             return min(hours_available_to_schedule, self.ceil_div(hours_left_for_task, workdays_remaining))
 
-    def _get_hours_per_day_list(self, task, work_today):
-        start_offset = 0 if work_today else 1
+    #TODO: day of week handling, update testing code to handle start_day as well
+    def _get_hours_per_day_list(self, task, start_day, work_days):
+        """
+        today_day_of_week = datetime.date.weekday(self.today)
+        day_of_week = (today_day_of_week + day) % 7
+        if day_of_week not in work_days:
+            if day == days_away and hours_left_for_task != 0:
+                return None
+            else:
+                continue
+        """
         hours_remaining = task.hours - task.hours_done
-        days_remaining = (task.due - self.today).days - start_offset
+        days_remaining = (task.due - start_day).days
         if days_remaining == 0:
             hours_per_day = 0
             extra_days_needed = 0
@@ -149,14 +155,9 @@ class TaskList(object):
         hours_per_day_list = [hours_per_day for day in xrange(days_remaining)]
         for i in xrange(extra_days_needed):
             hours_per_day_list[i] += 1
-        if not work_today:
-            hours_per_day_list = [0] + hours_per_day_list
         return hours_per_day_list
 
-    def _get_hours_needed(self, hours_per_day_list):
-        pass
-
-    def process_assignments(self, assignments, work_today, today_day_of_week,
+    def process_assignments(self, assignments, work_today,
         work_days, plan_tasks, last_task, max_days, max_hours):
         start_offset = 0 if work_today else 1
         start_day = self.today + datetime.timedelta(start_offset)
@@ -164,31 +165,17 @@ class TaskList(object):
         #tomorrow, we ignore it. maybe we should instead raise an exception
         #in this case
         assignments = [task for task in assignments if task.due > start_day]
-        assignments_hours = [((task, self._get_hours_per_day_list(task))) for task in assignments]
-
-        while len(assignments) > 0:
-            #pop from front is O(n), fix this later
-            task = assignments.pop(0)
+        for task in assignments:
             days_away = (task.due - self.today).days
-            start = 0 if work_today else 1
-            for day in xrange(start, days_away+1):
-                hours_left_for_task = task.hours - task.hours_done
-                if hours_left_for_task == 0:
-                    continue
-                day_of_week = (today_day_of_week + day) % 7
-                if day_of_week not in work_days:
-                    if day == days_away and hours_left_for_task != 0:
-                        return None
-                    else:
-                        continue
-                hours_per_day = self.pick_hours_to_assign(plan_tasks, day, days_away,
-                    max_hours, day_of_week, work_days, task, last_task, max_days)
-                if hours_per_day > 0 and hours_per_day + self.plan_hours(plan_tasks[day]) <= max_hours:
-                    task.hours_done += hours_per_day
-                    plan_tasks[day] += [(task, hours_per_day)]
-                    #add tuple of task and hours allotted for that day
-                elif day == days_away:
+            hours_per_day_list = self._get_hours_per_day_list(task, start_day)
+
+            for day in xrange(start_offset, days_away):
+                hours_per_day = hours_per_day_list[day - start_offset]
+                if hours_per_day + self.plan_hours(plan_tasks[day]) > max_hours:
                     return None
+                plan_tasks[day] += [(task, hours_per_day)]
+                if plan_hours(plan_tasks[day]) == max_hours
+
         return plan_tasks
 
     def calc_agenda_assignments(self, assignments, work_today,
@@ -200,11 +187,10 @@ class TaskList(object):
             return task.due
 
         last_task = assignments[-1]
-        today_day_of_week = datetime.date.weekday(self.today)
 
         assignments = list(sorted(assignments, key=get_due))
         return self.process_assignments(assignments, work_today,
-                today_day_of_week, work_days, plan_tasks, last_task, max_days, max_hours)
+                work_days, plan_tasks, last_task, max_days, max_hours)
 
         return plan_tasks
 
