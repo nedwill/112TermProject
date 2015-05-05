@@ -4,11 +4,6 @@ import datetime
 from tasks import FixedTask, TaskList, Task
 from main import CalendarPlanner
 
-#(self,description,hours,hoursDone,due)
-#(self,description,startTime,endTime,recurring=None)
-
-#[{"type": "fixed", "name": "sample", "time2": [2012, 11, 28, 17], "time1": [2012, 11, 28, 17]}, {"hours": 5, "hours_done": 0, "type": "task", "name": "sample2", "due": [2012, 11, 28]}]
-
 year = integers_in_range(2010, 2020)
 month = integers_in_range(1, 12)
 day = integers_in_range(1, 31)
@@ -58,6 +53,9 @@ def test_get_hours_per_day_list(l):
         #print hours_day_list
         assert sum(hours_day_list) == (task.hours - task.hours_done)
         assert 0 < len(set(hours_day_list)) < 3 #one or two hour options
+        for i in xrange(len(hours_day_list)):
+            for j in xrange(i+1, len(hours_day_list)):
+                hours_day_list[i] >= hours_day_list[j]
 
 test_calcagenda_fixed()
 test_calcagenda_assignments()
