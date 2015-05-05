@@ -100,7 +100,7 @@ class TaskList(object):
                 continue
             if task.recurring is not None and len(task.recurring) > 0:
                 return self._calc_agenda_recurring(days_away, task, plan_tasks, max_hours)
-            if task.hours + self._plan_hours(plan_tasks[days_away]) > max_hours:
+            if task.hours + self._plan_hours(plan_tasks, days_away) > max_hours:
                 return None
             plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
             return plan_tasks
