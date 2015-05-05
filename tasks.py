@@ -79,34 +79,35 @@ class TaskList(object):
                 self.remove(description)
                 return task
 
+    def calc_agenda_recurring(self, days_away, task, start_day, plan_tasks, max_hours):
+        for i in xrange(days_away+1):
+            dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
+            if dayOfWeek not in task.recurring:
+                continue
+            due = start_day + datetime.timedelta(i)
+            startHour = datetime.time(task.startTime.hour)
+            endHour = datetime.time(task.endTime.hour)
+            startTime = datetime.datetime.combine(due,startHour)
+            endTime = datetime.datetime.combine(due,endHour)
+            #4 extra chars, find length to chop before recalling constructor
+            choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
+            newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
+            if newtask.hours + self.plan_hours(plan_tasks[i]) <= max_hours:
+                plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
+            else:
+                return None
+
     def calc_agenda_fixed(self, start_day, max_hours, plan_tasks):
         for task in self.fixed.values():
             days_away = (task.due - start_day).days
             if days_away < 0:
                 continue
             if task.recurring is not None and len(task.recurring) > 0:
-                for i in xrange(days_away+1):
-                    dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
-                    if dayOfWeek not in task.recurring:
-                        continue
-                    due = start_day + datetime.timedelta(i)
-                    startHour = datetime.time(task.startTime.hour)
-                    endHour = datetime.time(task.endTime.hour)
-                    startTime = datetime.datetime.combine(due,startHour)
-                    endTime = datetime.datetime.combine(due,endHour)
-                    #4 extra chars, find length to chop before recalling constructor
-                    choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
-                    newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
-                    if newtask.hours + self.plan_hours(plan_tasks[i]) <= max_hours:
-                        plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
-                    else:
-                        return None
-            else:
-                if task.hours + self.plan_hours(plan_tasks[days_away]) <= max_hours:
-                    plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
-                else:
-                    return None
-        return plan_tasks
+                return self.calc_agenda_recurring(days_away, task, start_day, plan_tasks, max_hours)
+            if task.hours + self.plan_hours(plan_tasks[days_away]) > max_hours:
+                return None
+            plan_tasks[days_away] += [(task,task.hours)] #add tuple of task and hours allotted for that day
+            return plan_tasks
 
     def plan_hours(self, day):
         return sum(x[1] for x in day)
