@@ -124,7 +124,6 @@ class TaskList(object):
         hours_left_for_task = task.hours - task.hours_done
         hours_available_to_schedule = max_hours - self.plan_hours(plan_tasks[day])
         workdays_remaining = self.get_days_left(day, days_away, day_of_week, work_days)
-        print "hours_remaining"
         if workdays_remaining == 0:
             #if no days left, we fail at scheduling
             return None
