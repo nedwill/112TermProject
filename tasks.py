@@ -2,10 +2,10 @@ import datetime
 import math
 
 class Task(object): #recurring attribute here?
-    def __init__(self,description,hours,hoursDone,due):
+    def __init__(self,description,hours,hours_done,due):
         self.description = description
         self.hours = hours
-        self.hoursDone = hoursDone
+        self.hours_done = hours_done
         self.due = due
 
     def __str__(self):
@@ -13,7 +13,7 @@ class Task(object): #recurring attribute here?
 
     def __repr__(self):
         return "{}, Hours Left: {}, Days Left: {}".format(self.description,
-            self.hours - self.hoursDone, (self.due - datetime.date.today()).days)
+            self.hours - self.hours_done, (self.due - datetime.date.today()).days)
 
 class Assignment(Task):
     pass #same as Task?
@@ -24,9 +24,9 @@ class FixedTask(Task):
         self.endTime = endTime
         hours = ((endTime - startTime).seconds)/3600
         due = startTime.date()
-        hoursDone = 0 #can't have hours completed in advance on a fixed event
+        hours_done = 0 #can't have hours completed in advance on a fixed event
         self.recurring = recurring
-        super(FixedTask, self).__init__(description, hours, hoursDone, due)
+        super(FixedTask, self).__init__(description, hours, hours_done, due)
 
     def __str__(self):
         return self.description + " {}:{:02d}-{}:{:02d}".format(self.startTime.hour,
@@ -34,7 +34,7 @@ class FixedTask(Task):
 
     def __repr__(self):
         return "{}, Hours Left: {}, Days Left: {}".format(self.description,
-            self.hours - self.hoursDone, (self.due - datetime.date.today()).days)
+            self.hours - self.hours_done, (self.due - datetime.date.today()).days)
 
 class TaskList(object):
     def __init__(self):
@@ -69,8 +69,8 @@ class TaskList(object):
     def addHours(self, description, hours):
         if description in self.assignments:
             task = self.assignments[description]
-            task.hoursDone += hours
-            if task.hoursDone >= task.hours:
+            task.hours_done += hours
+            if task.hours_done >= task.hours:
                 self.remove(description)
                 return task
 
@@ -119,7 +119,7 @@ class TaskList(object):
         return workdays_remaining
 
     def pick_hours_to_assign(self, plan_tasks, day, days_away, max_hours, day_of_week, work_days, task, last_task, max_days):
-        hours_left_for_task = task.hours - task.hoursDone
+        hours_left_for_task = task.hours - task.hours_done
         hours_available_to_schedule = max_hours - self.plan_hours(plan_tasks[day])
         workdays_remaining = self.get_days_left(day, days_away, day_of_week, work_days)
         if workdays_remaining == 0:
@@ -134,29 +134,17 @@ class TaskList(object):
         else:
             return min(hours_available_to_schedule, self.ceil_div(hours_left_for_task, workdays_remaining))
 
-    def calc_agenda_assignments(self, assignments, start_day, work_today, work_days, max_days, max_hours, plan_tasks):
-        if len(assignments) == 0:
-            return plan_tasks
-        if plan_tasks is None:
-            return None
-        def get_due(task):
-            return task.due
-        assignments = sorted(assignments, key=get_due)
-
-        last_task = assignments[-1]
-        today_day_of_week = datetime.date.weekday(datetime.date.today())
-
-        for task in assignments:
-            #skip tasks due in the past
-            if task.due < datetime.date.today():
-                continue
-            #subtract here if you want to finish things in advance
+    def process_assignments(self, assignments, start_day, work_today, today_day_of_week,
+        work_days, plan_tasks, last_task, max_days, max_hours):
+        assignments = [task for task in assignments if task.due > datetime.date.today()]
+        while len(assignments) > 0:
+            #pop from front is O(n), fix this later
+            task = assignments.pop(0)
             days_away = (task.due - start_day).days
-            for day in xrange(days_away+1):
-                hours_left_for_task = task.hours - task.hoursDone
+            start = 0 if work_today else 1
+            for day in xrange(start, days_away+1):
+                hours_left_for_task = task.hours - task.hours_done
                 if hours_left_for_task == 0:
-                    continue
-                if day == 0 and work_today is False:
                     continue
                 day_of_week = (today_day_of_week + day) % 7
                 if day_of_week not in work_days:
@@ -167,22 +155,38 @@ class TaskList(object):
                 hours_per_day = self.pick_hours_to_assign(plan_tasks, day, days_away,
                     max_hours, day_of_week, work_days, task, last_task, max_days)
                 if hours_per_day > 0 and hours_per_day + self.plan_hours(plan_tasks[day]) <= max_hours:
-                    task.hoursDone += hours_per_day
+                    task.hours_done += hours_per_day
                     plan_tasks[day] += [(task, hours_per_day)]
                     #add tuple of task and hours allotted for that day
                 elif day == days_away:
                     return None
         return plan_tasks
 
-    def calcAgenda(self,max_hours,max_days=False,work_days=None,work_today=True):
+    def calc_agenda_assignments(self, assignments, start_day, work_today, work_days, max_days, max_hours, plan_tasks):
+        if len(assignments) == 0 or plan_tasks is None:
+            return plan_tasks
+
+        def get_due(task):
+            return task.due
+
+        last_task = assignments[-1]
+        today_day_of_week = datetime.date.weekday(datetime.date.today())
+
+        assignments = list(sorted(assignments, key=get_due))
+        return self.process_assignments(assignments, start_day, work_today,
+                today_day_of_week, work_days, plan_tasks, last_task, max_days, max_hours)
+
+        return plan_tasks
+
+    def calcAgenda(self, max_hours, max_days=False, work_days=None, work_today=True):
         """
         max_days maximizes work in given time at expense of easy/time efficiency
         """
         if work_days is None:
             work_days = [0,1,2,3,4,5,6]
         start_day = datetime.date.today()
-        days_needed = (self.latest_task - start_day).days+1
-        plan_tasks = [[] for day in xrange(days_needed)] #initialize with number of needed days
+        max_days_needed = (self.latest_task - start_day).days+1
+        plan_tasks = [[] for day in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self.calc_agenda_fixed(start_day, max_hours, plan_tasks)
         plan_tasks = self.calc_agenda_assignments(self.assignments.values(), start_day, work_today, work_days, max_days, max_hours, plan_tasks)
         return plan_tasks
