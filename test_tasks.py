@@ -40,5 +40,25 @@ def test_calcagenda_assignments(l):
     cal.tasks = tasks
     cal.createAgenda()
 
+@given([(int, int, (year, month, day))])
+def test_get_hours_per_day_list(l):
+    tl = TaskList()
+    today = datetime.date.today()
+    for hours, hours_done, due in l:
+        try:
+            due_dt = datetime.date(*due)
+        except ValueError:
+            #skip invalid dates
+            continue
+        if due_dt < today:
+            #only care about tasks due in the future
+            continue
+        task = Task("test", hours, hours_done, due_dt)
+        hours_day_list = tl._get_hours_per_day_list(task)
+        #print hours_day_list
+        assert sum(hours_day_list) == (task.hours - task.hours_done)
+        assert 0 < len(set(hours_day_list)) < 3 #one or two hour options
+
 test_calcagenda_fixed()
 test_calcagenda_assignments()
+test_get_hours_per_day_list()

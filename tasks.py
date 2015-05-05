@@ -77,7 +77,7 @@ class TaskList(object):
 
     def calc_agenda_recurring(self, days_away, task, plan_tasks, max_hours):
         for i in xrange(days_away+1):
-            dayOfWeek = datetime.date.weekday(datetime.date.today()+datetime.timedelta(i))
+            dayOfWeek = datetime.date.weekday(self.today + datetime.timedelta(i))
             if dayOfWeek not in task.recurring:
                 continue
             due = self.today + datetime.timedelta(i)
@@ -136,17 +136,23 @@ class TaskList(object):
         else:
             return min(hours_available_to_schedule, self.ceil_div(hours_left_for_task, workdays_remaining))
 
-    def _get_hours_per_day_list(task):
-        hours_remaining = task.hours_done - task.hours
-        days_remaining = task.due - datetime.date.today()
+    def _get_hours_per_day_list(self, task):
+        hours_remaining = task.hours - task.hours_done
+        days_remaining = (task.due - self.today).days
+        hours_per_day = hours_remaining / days_remaining
+        extra_days_needed = hours_remaining % days_remaining
+        ret = [hours_per_day for day in xrange(days_remaining)]
+        for i in xrange(extra_days_needed):
+            ret[i] += 1
+        return ret
 
     def process_assignments(self, assignments, work_today, today_day_of_week,
         work_days, plan_tasks, last_task, max_days, max_hours):
-        assignments = [task for task in assignments if task.due > datetime.date.today()]
+        assignments = [task for task in assignments if task.due > self.today]
         while len(assignments) > 0:
             #pop from front is O(n), fix this later
             task = assignments.pop(0)
-            days_away = (task.due - datetime.date.today()).days
+            days_away = (task.due - self.today).days
             start = 0 if work_today else 1
             for day in xrange(start, days_away+1):
                 hours_left_for_task = task.hours - task.hours_done
@@ -177,7 +183,7 @@ class TaskList(object):
             return task.due
 
         last_task = assignments[-1]
-        today_day_of_week = datetime.date.weekday(datetime.date.today())
+        today_day_of_week = datetime.date.weekday(self.today)
 
         assignments = list(sorted(assignments, key=get_due))
         return self.process_assignments(assignments, work_today,
