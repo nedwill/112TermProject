@@ -22,7 +22,7 @@ def test_calcagenda_fixed(l):
     cal.tasks = tasks
     cal.createAgenda()
 
-#@given([(str, int, int, (year, month, day))], hour)
+@given([(str, int, int, (year, month, day))], hour)
 def test_calcagenda_assignments(l, max_hours):
     #print max_hours, l
     tasks = TaskList()
@@ -43,8 +43,9 @@ def test_calcagenda_assignments(l, max_hours):
                 scheduled_hours += hours
         #we could probably do better than <=
         #we need that because if max_hours is 0 we lose instantly
-        assert scheduled_hours <= sum(x[1] - x[2] for x in l)
+        if sum(x[1] - x[2] for x in l) > 0:
+            assert 0 < scheduled_hours <= sum(x[1] - x[2] for x in l)
 
 #test_calcagenda_fixed()
-#test_calcagenda_assignments()
-test_calcagenda_assignments([(b'', 1538064, 1, (2017, 1, 3))], 8)
+test_calcagenda_assignments()
+#test_calcagenda_assignments([(b'', 1538064, 1, (2017, 1, 3))], 8)
