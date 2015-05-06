@@ -46,7 +46,7 @@ def test_calcagenda_assignments(l, max_hours, max_days):
             return
         except InvalidTask:
             return
-    agenda = tasks.calcAgenda(max_hours, max_days=max_days)
+    agenda = tasks.calc_agenda(max_hours, max_days=max_days)
     #what if we should be able to make an agenda but we don't?
     #difficult to model :(
     if agenda is not None:
