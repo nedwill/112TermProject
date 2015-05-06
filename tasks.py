@@ -176,7 +176,7 @@ class TaskList(object):
                 day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
             else:
                 assignments_new.append((task, hours_remaining))
-        return assignments_new
+        return day_tasks, assignments_new
 
     def _add_one_assignments(self, assignments, day_tasks, max_hours):
         """
@@ -196,10 +196,10 @@ class TaskList(object):
                 day_tasks = self._inc_day_task(day_tasks, task)
             else:
                 assignments_new.append((task, hours_remaining))
-        return assignments_new
+        return day_tasks, assignments_new
 
     def _fill_day_assignments(self, day_tasks, assignments, start_day, max_hours, max_days):
-        assignments_new = self._init_schedule_evenly(assignments, day_tasks, max_hours, start_day)
+        day_tasks, assignments_new = self._init_schedule_evenly(assignments, day_tasks, max_hours, start_day)
         if max_days:
             while self._plan_hours_day(day_tasks) < max_hours and assignments != assignments_new:
                 assignments = assignments_new
