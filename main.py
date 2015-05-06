@@ -511,28 +511,6 @@ class CalendarPlanner(object):
             return
         self.attempt_to_schedule()
 
-    def testAgenda(self, data):
-        try:  # bugs in loading data aren't interesting
-            data = json.loads(data)
-            tasks = set()
-            for task in data:
-                try:
-                    if task["type"] == "fixed":
-                        tasks.add(FixedTask(task["name"], datetime.datetime(
-                            *task["time1"]), datetime.datetime(*task["time2"])))
-                    elif task["type"] == "task":
-                        tasks.add(Task(
-                            task["name"], task["hours"], task["hours_done"], datetime.date(*task["due"])))
-                except:
-                    continue
-            myTasks = TaskList()
-            for task in tasks:
-                myTasks.add(task)
-        except:
-            exit()
-        self.tasks = myTasks
-        self.createAgenda()
-
     def redraw_calendar(self):
         self.cal.clear()
         self.cal = gCalendar(self.canvas, self.width, self.height,
