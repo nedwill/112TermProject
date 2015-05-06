@@ -1,8 +1,13 @@
 import datetime
 
+class InvalidTask(Exception):
+    pass
+
 class Task(object): #recurring attribute here?
-    def __init__(self,description,hours,hours_done,due):
+    def __init__(self, description, hours, hours_done, due):
         self.description = description
+        if hours < hours_done or hours < 0 or hours_done < 0:
+            raise InvalidTask
         self.hours = hours
         self.hours_done = hours_done
         self.due = due
@@ -13,9 +18,6 @@ class Task(object): #recurring attribute here?
     def __repr__(self):
         return "{}, Hours Left: {}, Days Left: {}".format(self.description,
             self.hours - self.hours_done, (self.due - datetime.date.today()).days)
-
-class Assignment(Task):
-    pass #same as Task?
 
 class FixedTask(Task):
     def __init__(self,description,startTime,endTime,recurring=None):
@@ -91,7 +93,7 @@ class TaskList(object):
             #4 extra chars, find length to chop before recalling constructor
             choplength = len(str(task.startTime.hour) + str(task.endTime.hour)) + 8
             newtask = FixedTask(task.description[:-choplength],startTime,endTime,True)
-            if newtask.hours + self._plan_hours(plan_tasks[i]) <= max_hours:
+            if newtask.hours + self._plan_hours(plan_tasks, i) <= max_hours:
                 plan_tasks[i] += [(newtask,newtask.hours)] #add tuple of task and hours allotted for that day
             else:
                 return None
@@ -227,10 +229,12 @@ class TaskList(object):
         """
         #TODO: arguments to this function should be part
         #of the tasklist __init__, not passed here
+        if max_hours == 0:
+            return None
         if work_days is None:
             work_days = [0, 1, 2, 3, 4, 5, 6]
         max_days_needed = (self.latest_task - self.today).days+1
-        plan_tasks = [[] for day in xrange(max_days_needed)] #initialize with number of needed days
+        plan_tasks = [[] for _ in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self._calc_agenda_fixed(max_hours, plan_tasks)
         plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today,
             work_days, max_days, max_hours, plan_tasks)
