@@ -626,8 +626,6 @@ class CalendarPlanner(object):
         self.canvas.create_window(
             col2, self.height * 29. / 40 + 150, window=b15)
         self.canvas.create_window(
-            col3, self.height * 29. / 40 + 30, window=b10)
-        self.canvas.create_window(
             col3, self.height * 29. / 40 + 120, window=b7)
         self.canvas.pack()
 

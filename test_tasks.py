@@ -56,5 +56,5 @@ def test_calcagenda_assignments(l, max_hours, max_days):
                 scheduled_hours += hours
         assert scheduled_hours == sum(x[1] - x[2] for x in l)
 
-#test_calcagenda_fixed()
+test_calcagenda_fixed()
 test_calcagenda_assignments()
