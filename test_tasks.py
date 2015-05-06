@@ -1,4 +1,4 @@
-from hypothesis import given, assume, Settings
+from hypothesis import given, assume#, Settings
 from hypothesis.specifiers import integers_in_range
 import datetime
 from tasks import FixedTask, TaskList, Task, InvalidTask
@@ -27,8 +27,8 @@ def test_calcagenda_fixed(l):
 
 #don't test names; no interesting bugs there
 #from hypothesis import Settings
-@given([(int, int, (year, month, day))], hour, bool, settings=Settings(max_examples=5000))
-#@given([(int, int, (year, month, day))], hour, bool)
+#@given([(int, int, (year, month, day))], hour, bool, settings=Settings(max_examples=5000))
+@given([(int, int, (year, month, day))], hour, bool)
 def test_calcagenda_assignments(l, max_hours, max_days):
     #print max_hours, l
     tasks = TaskList()
@@ -56,5 +56,5 @@ def test_calcagenda_assignments(l, max_hours, max_days):
                 scheduled_hours += hours
         assert scheduled_hours == sum(x[1] - x[2] for x in l)
 
-test_calcagenda_fixed()
+#test_calcagenda_fixed()
 test_calcagenda_assignments()

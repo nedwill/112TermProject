@@ -158,6 +158,20 @@ class TaskList(object):
         tasks_that_need_hours = set([task_search for (task_search, _) in assignments])
         return len(tasks_with_fewer_hours.intersection(tasks_that_need_hours)) > 0
 
+    def _add_one_assignments(self, assignments, day_tasks, max_hours):
+        assignments_new = []
+        for task, hours_remaining in assignments:
+            #try to make things even
+            if self._should_skip(task, assignments, day_tasks):
+                continue
+            if self._plan_hours_day(day_tasks) < max_hours:
+                if hours_remaining - 1 > 0:
+                    assignments_new.append((task, hours_remaining - 1))
+                day_tasks = self._inc_day_task(day_tasks, task)
+            else:
+                assignments_new.append((task, hours_remaining))
+        return assignments_new
+
     def _fill_day_assignments(self, day_tasks, assignments, start_day, max_hours, max_days):
         assignments_new = []
         for task, hours_remaining in assignments:
@@ -174,20 +188,9 @@ class TaskList(object):
                 assignments_new.append((task, hours_remaining))
         #_plan_hours_day is O(n), could do this faster with a local var
         if max_days:
-            while self._plan_hours_day(day_tasks) < max_hours and len(assignments_new) > 0:
-                assert assignments != assignments_new
+            while self._plan_hours_day(day_tasks) < max_hours and assignments != assignments_new:
                 assignments = assignments_new
-                assignments_new = []
-                for task, hours_remaining in assignments:
-                    #try to make things even
-                    if self._should_skip(task, assignments, day_tasks):
-                        continue
-                    if self._plan_hours_day(day_tasks) < max_hours:
-                        if hours_remaining - 1 > 0:
-                            assignments_new.append((task, hours_remaining - 1))
-                        day_tasks = self._inc_day_task(day_tasks, task)
-                    else:
-                        assignments_new.append((task, hours_remaining))
+                assignments_new = self._add_one_assignments(assignments, day_tasks, max_hours)
         return day_tasks, assignments_new
 
     def _calc_agenda_assignments(self, assignments, work_today,
