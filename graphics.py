@@ -111,55 +111,50 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
     def drawCell(self,left,top,right,bottom):
         pass #draw calendar rectangle with label
 
-    def draw(self, planner, calSearch=None):
+    def _process_row_col(self, row, col, planner):
+        newLeft = self.left+self.cellWidth*col
+        newRight = newLeft + self.cellWidth
+        newTop = self.top+self.cellHeight*row
+        newBottom = newTop+self.cellHeight
+        if row == 0: #create day of week labels on first pass
+            self.add(self.canvas.create_text((newLeft+newRight)/2,
+                self.height*7./80,text=self.days[col],
+                font=FONT12))
+        if self.monthArray[row][col] != 0:
+            selectedAgenda = planner.getAgenda(row,col)
+            self.add(self.canvas.create_rectangle(newLeft,newTop,
+            newRight,newBottom)) #day box
+            if self.monthArray[row][col] == self.selectedDay.day and self.month == self.selectedDay.month and self.year == self.selectedDay.year:
+                self.add(self.canvas.create_rectangle(newLeft,newTop,
+                newRight,newBottom,fill="yellow")) #selected box
+            if self.monthArray[row][col] == self.currentDay.day and self.month == self.currentDay.month and self.year == self.currentDay.year:
+                self.add(self.canvas.create_rectangle(newLeft,newTop,
+                newRight,newBottom,fill="green")) #today box
+            self.add(self.canvas.create_text(newLeft+2,newTop+1,
+                anchor=NW,text=self.monthArray[row][col],
+                font=FONT12))
+            if selectedAgenda is not None:
+                for i in xrange(len(selectedAgenda)):
+                    item = selectedAgenda[i]
+                    newTop2 = newTop + 15*(i+1)
+                    tempDescription = item[0].description
+                    if newTop2 + 30 > newBottom:
+                        self.add(self.canvas.create_text(newLeft,
+                            newTop2,text="......",font=SMALLFONT,anchor=NW))
+                        break
+                    if len(tempDescription) > 15:
+                        tempDescription = tempDescription[:11] + "..." + tempDescription[-3:]
+                    self.add(self.canvas.create_text(newLeft,newTop2,
+                        text=tempDescription,font=MEDIUMFONT,
+                        anchor=NW))
+        else:
+            self.add(self.canvas.create_rectangle(newLeft,newTop,
+            newRight,newBottom,fill="gray")) #day box
+
+    def draw(self, planner):
         self.clear()
         self.add(self.canvas.create_text(self.width*15./40,
             self.height*1./20,text=self.months[self.month-1] + " " + str(self.year),font=HUGEFONT))
         for row in xrange(self.weeks):
             for col in xrange(7):
-                newLeft = self.left+self.cellWidth*col
-                newRight = newLeft + self.cellWidth
-                newTop = self.top+self.cellHeight*row
-                newBottom = newTop+self.cellHeight
-                if row == 0: #create day of week labels on first pass
-                    self.add(self.canvas.create_text((newLeft+newRight)/2,
-                        self.height*7./80,text=self.days[col],
-                        font=FONT12))
-                if self.monthArray[row][col] != 0:
-                    selectedAgenda = planner.getAgenda(row,col)
-                    self.add(self.canvas.create_rectangle(newLeft,newTop,
-                    newRight,newBottom)) #day box
-                    if self.monthArray[row][col] == self.selectedDay.day and self.month == self.selectedDay.month and self.year == self.selectedDay.year:
-                        self.add(self.canvas.create_rectangle(newLeft,newTop,
-                        newRight,newBottom,fill="yellow")) #selected box
-                    if selectedAgenda is not None and len(selectedAgenda) > 0 and calSearch is not None:
-                        for task in selectedAgenda:
-                            if task[0].description[:len(calSearch)] == calSearch:
-                                self.add(self.canvas.create_rectangle(newLeft,
-                                newTop,newRight,newBottom,fill="orange"))
-                                #search found! paint box
-                                self.foundTask = True
-                                continue
-                    if self.monthArray[row][col] == self.currentDay.day and self.month == self.currentDay.month and self.year == self.currentDay.year:
-                        self.add(self.canvas.create_rectangle(newLeft,newTop,
-                        newRight,newBottom,fill="green")) #today box
-                    self.add(self.canvas.create_text(newLeft+2,newTop+1,
-                        anchor=NW,text=self.monthArray[row][col],
-                        font=FONT12))
-                    if selectedAgenda is not None:
-                        for i in xrange(len(selectedAgenda)):
-                            item = selectedAgenda[i]
-                            newTop2 = newTop + 15*(i+1)
-                            tempDescription = item[0].description
-                            if newTop2 + 30 > newBottom:
-                                self.add(self.canvas.create_text(newLeft,
-                                    newTop2,text="......",font=SMALLFONT,anchor=NW))
-                                break
-                            if len(tempDescription) > 15:
-                                tempDescription = tempDescription[:11] + "..." + tempDescription[-3:]
-                            self.add(self.canvas.create_text(newLeft,newTop2,
-                                text=tempDescription,font=MEDIUMFONT,
-                                anchor=NW))
-                else:
-                    self.add(self.canvas.create_rectangle(newLeft,newTop,
-                    newRight,newBottom,fill="gray")) #day box
+                self._process_row_col(row, col)

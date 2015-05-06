@@ -54,20 +54,6 @@ class CalendarPlanner(object):
             days += [today + datetime.timedelta(i)]
         return days
 
-    def calSearch(self):
-        # prompt user for name of task, all tasks with matching initial chars
-        # are highlighted
-        calSearch = "ECE"  # temp
-        self.cal.foundTask = False
-        calSearch = tkSimpleDialog.askstring("Task Finder",
-                                             "What is the name of your task?")
-        if calSearch is None:
-            return
-        self.cal.draw(self, calSearch)
-        if self.cal.foundTask is False:
-            tkMessageBox.showinfo("Task Not Found",
-                                  "The task you described is not present in this month.")
-
     def clearData(self):
         check = tkMessageBox.askyesno("Are you sure?",
                                       "Are you sure you want to clear all of your data?")
@@ -605,8 +591,6 @@ class CalendarPlanner(object):
                     command=self.setMaxHours)
         b9 = Button(self.canvas, text="Toggle Schedule Optimization",
                     command=self.toggleMaxDays)
-        b10 = Button(self.canvas, text="Search Calendar",
-                     command=self.calSearch)
         b13 = Button(self.canvas, text="I've Done Work!",
                      command=self.add_hours)
         b14 = Button(
