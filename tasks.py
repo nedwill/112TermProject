@@ -145,8 +145,8 @@ class TaskList(object):
                 new_day_tasks.append((day_task, existing_hours))
         return new_day_tasks
 
-    #if another task with fewer hours assigned has more hours to add
     def _should_skip(self, task, assignments, day_tasks):
+        "if another task with fewer hours assigned has more hours to add"
         hours_assigned = None
         for task_search, hours_assigned in day_tasks:
             if task_search == task:
@@ -158,7 +158,33 @@ class TaskList(object):
         tasks_that_need_hours = set([task_search for (task_search, _) in assignments])
         return len(tasks_with_fewer_hours.intersection(tasks_that_need_hours)) > 0
 
+    def _init_schedule_evenly(self, assignments, day_tasks, max_hours, start_day):
+        """
+        Given a list of assignments and a possibly pre-populated
+        day_tasks, evenly assign work to be done as soon as possible.
+        """
+        assignments_new = []
+        for task, hours_remaining in assignments:
+            #assert (time.time() - start_time) < 2
+            if self._plan_hours_day(day_tasks) < max_hours:
+                days_remaining = (task.due - start_day).days
+                if days_remaining == 0:
+                    raise NotEnoughTime
+                hours_per_day = self._ceil_div(hours_remaining, days_remaining)
+                if hours_remaining - hours_per_day > 0:
+                    assignments_new.append((task, hours_remaining - hours_per_day))
+                day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
+            else:
+                assignments_new.append((task, hours_remaining))
+        return assignments_new
+
     def _add_one_assignments(self, assignments, day_tasks, max_hours):
+        """
+        given a schedule of work for a day, try to add more hours to tasks
+        to even out the amount done per day where possible
+        e.g. Task 1: 4 hours, Task 2: 2 hours
+        -> Task 1: 4 hours, Task 2: 4 hours if possible
+        """
         assignments_new = []
         for task, hours_remaining in assignments:
             #try to make things even
@@ -173,20 +199,7 @@ class TaskList(object):
         return assignments_new
 
     def _fill_day_assignments(self, day_tasks, assignments, start_day, max_hours, max_days):
-        assignments_new = []
-        for task, hours_remaining in assignments:
-            #assert (time.time() - start_time) < 2
-            if self._plan_hours_day(day_tasks) < max_hours:
-                days_remaining = (task.due - start_day).days
-                if days_remaining == 0:
-                    raise NotEnoughTime
-                hours_per_day = self._ceil_div(hours_remaining, days_remaining)
-                if hours_remaining - hours_per_day > 0:
-                    assignments_new.append((task, hours_remaining - hours_per_day))
-                day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
-            else:
-                assignments_new.append((task, hours_remaining))
-        #_plan_hours_day is O(n), could do this faster with a local var
+        assignments_new = self._init_schedule_evenly(assignments, day_tasks, max_hours, start_day)
         if max_days:
             while self._plan_hours_day(day_tasks) < max_hours and assignments != assignments_new:
                 assignments = assignments_new
