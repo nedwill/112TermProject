@@ -213,7 +213,7 @@ class TaskList(object):
             start_day = self.today + datetime.timedelta(day)
             try:
                 plan_tasks[day], assignments = self._fill_day_assignments(plan_tasks[day],
-                    assignments, start_day, max_hours)
+                    assignments, start_day, max_hours, max_days)
             except NotEnoughTime:
                 return None
         #if we couldn't plan out every assignment

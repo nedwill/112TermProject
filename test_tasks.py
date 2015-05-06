@@ -23,8 +23,8 @@ def test_calcagenda_fixed(l):
     cal.createAgenda()
 
 #don't test names; no interesting bugs there
-@given([(int, int, (year, month, day))], hour)#, settings=Settings(max_examples=5000))
-def test_calcagenda_assignments(l, max_hours):
+@given([(int, int, (year, month, day))], hour, bool, settings=Settings(max_examples=5000))
+def test_calcagenda_assignments(l, max_hours, max_days):
     #print max_hours, l
     tasks = TaskList()
     try:
@@ -41,7 +41,7 @@ def test_calcagenda_assignments(l, max_hours):
             tasks.add(task)
         except ValueError:
             pass
-    agenda = tasks.calcAgenda(max_hours)
+    agenda = tasks.calcAgenda(max_hours, max_days=max_days)
     #what if we should be able to make an agenda but we don't?
     #difficult to model :(
     if agenda is not None:
