@@ -11,7 +11,6 @@ if platform.system() == "Darwin":
     BIGFONT = (FONT, 20, "bold")
     HUGEFONT = (FONT, 26, "bold")
 else: #assume linux
-    print "case2"
     FONT = "Ubuntu"
     SMALLFONT = (FONT, 5, "bold")
     MEDIUMFONT = (FONT, 9, "bold")
@@ -56,8 +55,7 @@ class Agenda(GraphicsElement):
         self.right,self.bottom)) #temp until we put the actual calendar
         self.add(self.canvas.create_text(self.left,self.top,
             text="Description",font=SMALLFONT,anchor=NW))
-        self.add(self.canvas.create_text(self.left + ((self.right - \
-            self.left) / 2),self.top,text="Hours",font=SMALLFONT,anchor=N))
+        self.add(self.canvas.create_text(self.left + ((self.right - self.left) / 2),self.top,text="Hours",font=SMALLFONT,anchor=N))
         self.add(self.canvas.create_text(self.right,self.top,text="Due Date",
             font=SMALLFONT,anchor=NE))
 
@@ -77,8 +75,7 @@ class Agenda(GraphicsElement):
                 break
             self.add(self.canvas.create_text(self.left,newTop,
                 text=tempDescription,font=MEDIUMFONT,anchor=NW))
-            self.add(self.canvas.create_text(self.left +\
-             ((self.right - self.left) / 2),newTop,text=item[1],
+            self.add(self.canvas.create_text(self.left + ((self.right - self.left) / 2),newTop,text=item[1],
              font=MEDIUMFONT,anchor=N))
             self.add(self.canvas.create_text(self.right,newTop,
                 text=item[0].due,font=MEDIUMFONT,anchor=NE))
@@ -117,8 +114,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
     def draw(self, planner, calSearch=None):
         self.clear()
         self.add(self.canvas.create_text(self.width*15./40,
-            self.height*1./20,text=self.months[self.month-1] + " " + \
-            str(self.year),font=HUGEFONT))
+            self.height*1./20,text=self.months[self.month-1] + " " + str(self.year),font=HUGEFONT))
         for row in xrange(self.weeks):
             for col in xrange(7):
                 newLeft = self.left+self.cellWidth*col
@@ -133,27 +129,18 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                     selectedAgenda = planner.getAgenda(row,col)
                     self.add(self.canvas.create_rectangle(newLeft,newTop,
                     newRight,newBottom)) #day box
-                    if self.monthArray[row][col] == self.selectedDay.day and \
-                    self.month == self.selectedDay.month and self.year == \
-                    self.selectedDay.year:
+                    if self.monthArray[row][col] == self.selectedDay.day and self.month == self.selectedDay.month and self.year == self.selectedDay.year:
                         self.add(self.canvas.create_rectangle(newLeft,newTop,
                         newRight,newBottom,fill="yellow")) #selected box
-                    #if self.monthArray[row][col] == self.selectedDay.day and\
-                    #self.month == self.selectedDay.month and\
-                    #self.year == self.selectedDay.year:
-                    if selectedAgenda is not None and len(selectedAgenda) > 0 \
-                    and calSearch is not None:
+                    if selectedAgenda is not None and len(selectedAgenda) > 0 and calSearch is not None:
                         for task in selectedAgenda:
-                            if task[0].description[:len(calSearch)] ==\
-                             calSearch:
+                            if task[0].description[:len(calSearch)] == calSearch:
                                 self.add(self.canvas.create_rectangle(newLeft,
                                 newTop,newRight,newBottom,fill="orange"))
                                 #search found! paint box
                                 self.foundTask = True
                                 continue
-                    if self.monthArray[row][col] == self.currentDay.day\
-                     and self.month == self.currentDay.month and self.year\
-                      == self.currentDay.year:
+                    if self.monthArray[row][col] == self.currentDay.day and self.month == self.currentDay.month and self.year == self.currentDay.year:
                         self.add(self.canvas.create_rectangle(newLeft,newTop,
                         newRight,newBottom,fill="green")) #today box
                     self.add(self.canvas.create_text(newLeft+2,newTop+1,
@@ -169,8 +156,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                                     newTop2,text="......",font=SMALLFONT,anchor=NW))
                                 break
                             if len(tempDescription) > 15:
-                                tempDescription = tempDescription[:11] +\
-                                 "..." + tempDescription[-3:]
+                                tempDescription = tempDescription[:11] + "..." + tempDescription[-3:]
                             self.add(self.canvas.create_text(newLeft,newTop2,
                                 text=tempDescription,font=MEDIUMFONT,
                                 anchor=NW))
