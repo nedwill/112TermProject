@@ -111,7 +111,7 @@ class TaskList(object):
     def _plan_hours(self, plan_tasks, day):
         return self._plan_hours_day(plan_tasks[day])
 
-    def _ceil_div(x, y):
+    def _ceil_div(self, x, y):
         assert x >= 0 and y > 0
         return (x / y) + (1 if x % y > 0 else 0)
 
@@ -120,10 +120,7 @@ class TaskList(object):
         new_day_tasks = []
         for day_task, existing_hours in day_tasks:
             if day_task == task:
-                #if new hours == 0, just drop the task
-                assert new_hours >= 0
-                if new_hours > 0:
-                    new_day_tasks.append((day_task, new_hours))
+                new_day_tasks.append((day_task, new_hours))
             else:
                 new_day_tasks.append((day_task, existing_hours))
         return new_day_tasks
@@ -133,8 +130,7 @@ class TaskList(object):
         new_day_tasks = []
         for day_task, existing_hours in day_tasks:
             if day_task == task:
-                #if new hours == 0, just drop the task
-                new_day_tasks.append((day_task, existing_hours + 1))
+                new_day_tasks.append((day_task, existing_hours+1))
             else:
                 new_day_tasks.append((day_task, existing_hours))
         return new_day_tasks
@@ -142,22 +138,26 @@ class TaskList(object):
     def _fill_day_assignments(self, day_tasks, assignments, start_day, max_hours):
         assignments_new = []
         for task, hours_remaining in assignments:
+            #assert (time.time() - start_time) < 2
             if self._plan_hours_day(day_tasks) < max_hours:
                 days_remaining = (task.due - start_day).days
                 assert days_remaining > 0
                 hours_per_day = self._ceil_div(hours_remaining, days_remaining)
-                assignments_new.append((task, hours_remaining - hours_per_day))
+                if hours_remaining - hours_per_day > 0:
+                    assignments_new.append((task, hours_remaining - hours_per_day))
                 day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
             else:
                 assignments_new.append((task, hours_remaining))
         #here's where we can flag on max_days
         #_plan_hours_day is O(n), could do this faster with a local var
         while self._plan_hours_day(day_tasks) < max_hours and len(assignments_new) > 0:
+            assert assignments != assignments_new
             assignments = assignments_new
             assignments_new = []
             for task, hours_remaining in assignments:
                 if self._plan_hours_day(day_tasks) < max_hours:
-                    assignments_new.append((task, hours_remaining-1))
+                    if hours_remaining - 1 > 0:
+                        assignments_new.append((task, hours_remaining - 1))
                     day_tasks = self._inc_day_task(day_tasks, task)
                 else:
                     assignments_new.append((task, hours_remaining))
@@ -174,7 +174,11 @@ class TaskList(object):
         #in this case
         max_days_needed = (self.latest_task - self.today).days+1
         assignments = sorted(assignments, key=lambda task: task.due)
-        assignments = [(task, task.hours - task.hours_done) for task in assignments if task.due > start_day]
+        assignments_new = []
+        for task in assignments:
+            if task.due > start_day and task.hours - task.hours_done > 0:
+                assignments_new.append((task, task.hours - task.hours_done))
+        assignments = assignments_new
         #are we handling work_today right here?
         for day in range(max_days_needed):
             today_day_of_week = datetime.date.weekday(self.today)
