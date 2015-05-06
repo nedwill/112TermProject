@@ -105,7 +105,7 @@ class CalendarPlanner(object):
             exit()
 
     def create_agenda_safe(self):
-        return self.tasks.calcAgenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
+        return self.tasks.calc_agenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
 
     def createAgenda(self):
         self.current_agenda = self.create_agenda_safe()
@@ -493,7 +493,7 @@ class CalendarPlanner(object):
             return
         self.attempt_to_schedule()
 
-    def addHours(self):
+    def add_hours(self):
         description = tkSimpleDialog.askstring("Task Completer",
                                                "What is the name of your task?")
         if description is None:
@@ -503,7 +503,7 @@ class CalendarPlanner(object):
                                           "How many hours did you complete?")
         if hours is None:
             return
-        added = self.tasks.addHours(description, hours)
+        added = self.tasks.add_hours(description, hours)
         if added is None:
             tkMessageBox.showinfo("You Should Know...",
                                   "There was no task found matching that description!")
@@ -608,7 +608,7 @@ class CalendarPlanner(object):
         b10 = Button(self.canvas, text="Search Calendar",
                      command=self.calSearch)
         b13 = Button(self.canvas, text="I've Done Work!",
-                     command=self.addHours)
+                     command=self.add_hours)
         b14 = Button(
             self.canvas, text="Toggle Work Days", command=self.toggleWorkDay)
         b15 = Button(

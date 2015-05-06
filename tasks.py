@@ -71,7 +71,7 @@ class TaskList(object):
             del self.assignments[description]
             return ret
 
-    def addHours(self, description, hours):
+    def add_hours(self, description, hours):
         if description in self.assignments:
             task = self.assignments[description]
             task.hours_done += hours
@@ -239,7 +239,7 @@ class TaskList(object):
             return None
         return plan_tasks
 
-    def calcAgenda(self, max_hours, max_days=False, work_days=None, work_today=True):
+    def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True):
         """
         max_days maximizes work in given time at expense of easy/time efficiency
         """
