@@ -1,4 +1,4 @@
-from hypothesis import given, assume
+from hypothesis import given, assume, Settings
 from hypothesis.specifiers import integers_in_range
 import datetime
 from tasks import FixedTask, TaskList, Task
@@ -22,15 +22,17 @@ def test_calcagenda_fixed(l):
     cal.tasks = tasks
     cal.createAgenda()
 
-@given([(str, int, int, (year, month, day))], hour)
+#don't test names; no interesting bugs there
+@given([(int, int, (year, month, day))], hour)#, settings=Settings(max_examples=5000))
 def test_calcagenda_assignments(l, max_hours):
     #print max_hours, l
     tasks = TaskList()
     try:
-        assume(all(datetime.date(*x[3]) > datetime.date.today() for x in l))
+        assume(all(datetime.date(*x[2]) > datetime.date.today() for x in l))
     except ValueError:
         return
-    l = [(name, abs(hours), hours_done % (abs(hours) + 1), due) for (name, hours, hours_done, due) in l]
+
+    l = [(str(name), abs(hours), hours_done % (abs(hours) + 1), due) for (name,(hours, hours_done, due)) in enumerate(l)]
     for name, hours, hours_done, due in l:
         hours = abs(hours)
         hours_done %= (hours + 1) #keep in range of hours
@@ -40,6 +42,8 @@ def test_calcagenda_assignments(l, max_hours):
         except ValueError:
             pass
     agenda = tasks.calcAgenda(max_hours)
+    #what if we should be able to make an agenda but we don't?
+    #difficult to model :(
     if agenda is not None:
         scheduled_hours = 0
         for day in agenda:
@@ -48,8 +52,7 @@ def test_calcagenda_assignments(l, max_hours):
         #we could probably do better than <=
         #we need that because if max_hours is 0 we lose instantly
         #print "{} scheduled_hours".format(scheduled_hours),l
-        if sum(x[1] - x[2] for x in l) > 0:
-            assert 0 < scheduled_hours <= sum(x[1] - x[2] for x in l)
+        assert scheduled_hours == sum(x[1] - x[2] for x in l)
 
 #test_calcagenda_fixed()
 test_calcagenda_assignments()
