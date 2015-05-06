@@ -203,7 +203,7 @@ class TaskList(object):
         if max_days:
             while self._plan_hours_day(day_tasks) < max_hours and assignments != assignments_new:
                 assignments = assignments_new
-                assignments_new = self._add_one_assignments(assignments, day_tasks, max_hours)
+                day_tasks, assignments_new = self._add_one_assignments(assignments, day_tasks, max_hours)
         return day_tasks, assignments_new
 
     def _calc_agenda_assignments(self, assignments, work_today,
