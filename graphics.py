@@ -1,6 +1,23 @@
 import datetime
 from Tkinter import N, NE, NW
 import calendar
+import platform
+
+if platform.system() == "Darwin":
+    FONT = "Helvetica"
+    SMALLFONT = (FONT, 10, "bold")
+    MEDIUMFONT = (FONT, 18, "bold")
+    FONT12 = (FONT, 12, "bold")
+    BIGFONT = (FONT, 20, "bold")
+    HUGEFONT = (FONT, 26, "bold")
+else: #assume linux
+    print "case2"
+    FONT = "Ubuntu"
+    SMALLFONT = (FONT, 5, "bold")
+    MEDIUMFONT = (FONT, 9, "bold")
+    FONT12 = (FONT, 6, "bold")
+    BIGFONT = (FONT, 10, "bold")
+    HUGEFONT = (FONT, 13, "bold")
 
 class GraphicsElement(object): #basic graphical element
     def __init__(self,canvas,width,height):
@@ -38,12 +55,11 @@ class Agenda(GraphicsElement):
         self.add(self.canvas.create_rectangle(self.left,self.top,
         self.right,self.bottom)) #temp until we put the actual calendar
         self.add(self.canvas.create_text(self.left,self.top,
-            text="Description",font=("Helvetica", 10, "bold"),anchor=NW))
+            text="Description",font=SMALLFONT,anchor=NW))
         self.add(self.canvas.create_text(self.left + ((self.right - \
-            self.left) / 2),self.top,text="Hours",font=("Helvetica", 10,
-             "bold"),anchor=N))
+            self.left) / 2),self.top,text="Hours",font=SMALLFONT,anchor=N))
         self.add(self.canvas.create_text(self.right,self.top,text="Due Date",
-            font=("Helvetica", 10, "bold"),anchor=NE))
+            font=SMALLFONT,anchor=NE))
 
     def draw(self, selectedAgenda):
         #loop to create rectangles
@@ -57,15 +73,15 @@ class Agenda(GraphicsElement):
             newTop = self.top + 20*(i+1)
             if newTop + 40 > self.bottom:
                 self.add(self.canvas.create_text(self.left,newTop,
-                    text="......",font=("Helvetica", 10,),anchor=NW))
+                    text="......",font=MEDIUMFONT,anchor=NW))
                 break
             self.add(self.canvas.create_text(self.left,newTop,
-                text=tempDescription,font=("Helvetica", 10,),anchor=NW))
+                text=tempDescription,font=MEDIUMFONT,anchor=NW))
             self.add(self.canvas.create_text(self.left +\
              ((self.right - self.left) / 2),newTop,text=item[1],
-             font=("Helvetica", 10,),anchor=N))
+             font=MEDIUMFONT,anchor=N))
             self.add(self.canvas.create_text(self.right,newTop,
-                text=item[0].due,font=("Helvetica", 10,),anchor=NE))
+                text=item[0].due,font=MEDIUMFONT,anchor=NE))
 
 class gCalendar(GraphicsElement): #draw calendar with given specs
     def __init__(self,canvas,width,height,month,year):
@@ -102,7 +118,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
         self.clear()
         self.add(self.canvas.create_text(self.width*15./40,
             self.height*1./20,text=self.months[self.month-1] + " " + \
-            str(self.year),font=("Helvetica", 26, "bold")))
+            str(self.year),font=HUGEFONT))
         for row in xrange(self.weeks):
             for col in xrange(7):
                 newLeft = self.left+self.cellWidth*col
@@ -112,7 +128,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                 if row == 0: #create day of week labels on first pass
                     self.add(self.canvas.create_text((newLeft+newRight)/2,
                         self.height*7./80,text=self.days[col],
-                        font=("Helvetica", 12, "bold")))
+                        font=FONT12))
                 if self.monthArray[row][col] != 0:
                     selectedAgenda = planner.getAgenda(row,col)
                     self.add(self.canvas.create_rectangle(newLeft,newTop,
@@ -142,7 +158,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                         newRight,newBottom,fill="green")) #today box
                     self.add(self.canvas.create_text(newLeft+2,newTop+1,
                         anchor=NW,text=self.monthArray[row][col],
-                        font=("Helvetica", 12, "bold")))
+                        font=FONT12))
                     if selectedAgenda is not None:
                         for i in xrange(len(selectedAgenda)):
                             item = selectedAgenda[i]
@@ -150,14 +166,13 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                             tempDescription = item[0].description
                             if newTop2 + 30 > newBottom:
                                 self.add(self.canvas.create_text(newLeft,
-                                    newTop2,text="......",font=("Helvetica",
-                                     10,),anchor=NW))
+                                    newTop2,text="......",font=SMALLFONT,anchor=NW))
                                 break
                             if len(tempDescription) > 15:
                                 tempDescription = tempDescription[:11] +\
                                  "..." + tempDescription[-3:]
                             self.add(self.canvas.create_text(newLeft,newTop2,
-                                text=tempDescription,font=("Helvetica", 10,),
+                                text=tempDescription,font=MEDIUMFONT,
                                 anchor=NW))
                 else:
                     self.add(self.canvas.create_rectangle(newLeft,newTop,

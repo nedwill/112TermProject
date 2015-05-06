@@ -10,10 +10,9 @@ import json
 import os
 from tasks import TaskList, FixedTask, Task
 from Tkinter import Tk, FALSE, Canvas, Button
-from graphics import gCalendar, Agenda
+from graphics import gCalendar, Agenda, MEDIUMFONT, BIGFONT
 
 SAVEFILE = "schedule.dat"
-
 
 class Day(object):
 
@@ -119,7 +118,7 @@ class CalendarPlanner(object):
             self.taskDraw = self.canvas.create_text(x, y,
                                                     text=self.dragTask[
                                                         0].description,
-                                                    font=("Helvetica", 18, "bold"))
+                                                    font=MEDIUMFONT)
 
     def checkIfAgenda(self, event):
         x = event.x
@@ -135,7 +134,7 @@ class CalendarPlanner(object):
                 self.taskDraw = self.canvas.create_text(x, y,
                                                         text=self.dragTask[
                                                             0].description,
-                                                        font=("Helvetica", 18, "bold"))
+                                                        font=MEDIUMFONT)
 
     def placeTask(self, date):
         task = self.dragTask[0]
@@ -268,7 +267,7 @@ class CalendarPlanner(object):
                                                     self.height * 1. / 20,
                                                     text="Agenda ({} hour days)".format(
                                                         self.max_hours),
-                                                    font=("Helvetica", 20, "bold"))
+                                                    font=BIGFONT)
 
     def setMaxHours(self):
         original = self.max_hours
@@ -619,11 +618,11 @@ class CalendarPlanner(object):
         col2 = self.cal.left + 2 * (calwidth / 2) - 30
         col3 = self.cal.left + 3 * (calwidth / 2)
         self.canvas.create_text(col1, self.height * 29. / 40,
-                                text="Tasks", font=("Helvetica", 20, "bold"))
+                                text="Tasks", font=BIGFONT)
         self.canvas.create_text(col2, self.height * 29. / 40,
-                                text="Scheduling", font=("Helvetica", 20, "bold"))
+                                text="Scheduling", font=BIGFONT)
         self.canvas.create_text(col3, self.height * 29. / 40,
-                                text="Management", font=("Helvetica", 20, "bold"))
+                                text="Management", font=BIGFONT)
         self.canvas.create_window(self.width * 5. / 40,
                                   self.height * 1. / 20, window=b1)  # 3-6 tasks
         self.canvas.create_window(self.width * 25. / 40,
