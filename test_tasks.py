@@ -1,4 +1,4 @@
-from hypothesis import given
+from hypothesis import given, assume
 from hypothesis.specifiers import integers_in_range
 import datetime
 from tasks import FixedTask, TaskList, Task
@@ -26,6 +26,10 @@ def test_calcagenda_fixed(l):
 def test_calcagenda_assignments(l, max_hours):
     #print max_hours, l
     tasks = TaskList()
+    try:
+        assume(all(datetime.date(*x[3]) > datetime.date.today() for x in l))
+    except ValueError:
+        return
     l = [(name, abs(hours), hours_done % (abs(hours) + 1), due) for (name, hours, hours_done, due) in l]
     for name, hours, hours_done, due in l:
         hours = abs(hours)
@@ -43,6 +47,7 @@ def test_calcagenda_assignments(l, max_hours):
                 scheduled_hours += hours
         #we could probably do better than <=
         #we need that because if max_hours is 0 we lose instantly
+        #print "{} scheduled_hours".format(scheduled_hours),l
         if sum(x[1] - x[2] for x in l) > 0:
             assert 0 < scheduled_hours <= sum(x[1] - x[2] for x in l)
 

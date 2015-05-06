@@ -117,16 +117,21 @@ class TaskList(object):
 
     #TODO: switch all of these functions to using dictionaries
     def _update_day_tasks(self, day_tasks, task, new_hours):
-        new_day_tasks = []
-        for day_task, existing_hours in day_tasks:
-            if day_task == task:
-                new_day_tasks.append((day_task, new_hours))
-            else:
-                new_day_tasks.append((day_task, existing_hours))
-        return new_day_tasks
+        #if already exists
+        if any(task == x[0] for x in day_tasks):
+            new_day_tasks = []
+            for day_task, existing_hours in day_tasks:
+                if day_task == task:
+                    new_day_tasks.append((day_task, new_hours))
+                else:
+                    new_day_tasks.append((day_task, existing_hours))
+            return new_day_tasks
+        else:
+            return day_tasks + [(task, new_hours)]
 
     #again, this could obviously be done so much better with a dict
     def _inc_day_task(self, day_tasks, task):
+        #assume already exists
         new_day_tasks = []
         for day_task, existing_hours in day_tasks:
             if day_task == task:
@@ -148,6 +153,7 @@ class TaskList(object):
                 day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
             else:
                 assignments_new.append((task, hours_remaining))
+        #print day_tasks
         #here's where we can flag on max_days
         #_plan_hours_day is O(n), could do this faster with a local var
         while self._plan_hours_day(day_tasks) < max_hours and len(assignments_new) > 0:
