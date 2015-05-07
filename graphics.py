@@ -70,14 +70,15 @@ class Agenda(GraphicsElement):
             newTop = self.top + 20*(i+1)
             if newTop + 40 > self.bottom:
                 self.add(self.canvas.create_text(self.left,newTop,
-                    text="......",font=MEDIUMFONT,anchor=NW))
+                    text="......",font=FONT12,anchor=NW))
                 break
-            self.add(self.canvas.create_text(self.left,newTop,
-                text=tempDescription,font=MEDIUMFONT,anchor=NW))
-            self.add(self.canvas.create_text(self.left + ((self.right - self.left) / 2),newTop,text=item[1],
-             font=MEDIUMFONT,anchor=N))
+            left = self.left + 4
+            self.add(self.canvas.create_text(left,newTop,
+                text=tempDescription,font=FONT12,anchor=NW))
+            self.add(self.canvas.create_text(left + ((self.right - self.left) / 2),newTop,text=item[1],
+             font=FONT12,anchor=N))
             self.add(self.canvas.create_text(self.right,newTop,
-                text=item[0].due,font=MEDIUMFONT,anchor=NE))
+                text=item[0].due,font=FONT12,anchor=NE))
 
 class gCalendar(GraphicsElement): #draw calendar with given specs
     def __init__(self,canvas,width,height,month,year):
@@ -132,13 +133,13 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
                 newTop2 = newTop + 15*(i+1)
                 tempDescription = item[0].description
                 if newTop2 + 30 > newBottom:
-                    self.add(self.canvas.create_text(newLeft,
-                        newTop2,text="......",font=SMALLFONT,anchor=NW))
+                    self.add(self.canvas.create_text(newLeft+4,
+                        newTop2,text="......",font=FONT12,anchor=NW))
                     break
                 if len(tempDescription) > 15:
                     tempDescription = tempDescription[:11] + "..." + tempDescription[-3:]
-                self.add(self.canvas.create_text(newLeft,newTop2,
-                    text=tempDescription,font=MEDIUMFONT,
+                self.add(self.canvas.create_text(newLeft+4,newTop2,
+                    text=tempDescription,font=FONT12,
                     anchor=NW))
 
     def _process_row_col(self, planner, row, col):
