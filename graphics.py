@@ -130,6 +130,7 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
         selected_agenda = planner.getAgenda(row, col)
         if selected_agenda is not None:
             for i, item in enumerate(selected_agenda):
+                #lots of hardcoded values here... bad
                 newTop2 = newTop + 15*(i+1)
                 tempDescription = item[0].description
                 if newTop2 + 30 > newBottom:
@@ -161,7 +162,8 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
 
     def draw(self, planner):
         self.clear()
-        self.add(self.canvas.create_text(self.width*15./40, self.height*1./20, text=self.months[self.month-1] + " " + str(self.year), font=HUGEFONT))
+        self.add(self.canvas.create_text(self.width*15./40, self.height*1./20,
+            text="{} {}".format(self.months[self.month-1], self.year), font=HUGEFONT))
         for row in xrange(self.weeks):
             for col in xrange(7):
                 self._process_row_col(planner, row, col)
