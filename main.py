@@ -6,8 +6,8 @@ import datetime
 import calendar
 import tkSimpleDialog
 import tkMessageBox
-import json
 import os
+import pickle
 from tasks import TaskList, FixedTask, Task
 from Tkinter import Tk, FALSE, Canvas, Button
 from graphics import gCalendar, Agenda, MEDIUMFONT, BIGFONT
@@ -63,7 +63,27 @@ class CalendarPlanner(object):
             self.attempt_to_schedule()
 
     def saveData(self):
-        return  # not working right now
+        data = [self.tasks,self.max_hours,self.maxDays,self.workDays]
+        with open(SAVEFILE, "wb") as f:
+            pickle.dump(data, f)
+
+    def loadData(self):
+        try:
+            with open(SAVEFILE, "rb") as f:
+                data = pickle.load(f)
+            self.tasks = data[0]
+            self.max_hours = data[1]
+            self.maxDays = data[2]
+            self.workDays = data[3]
+            self.attempt_to_schedule(err_msg="Couldn't load data.")
+        except EOFError:
+            return
+        #except:
+        #    tkMessageBox.showwarning("Couldn't Load Data",
+        #     "The data file exists but it could not be loaded!")
+
+    """
+    def saveData(self):
         with open(SAVEFILE, "w") as f:
             data = {
                 "tasks": self.tasks,
@@ -89,6 +109,7 @@ class CalendarPlanner(object):
             tkMessageBox.showwarning("Couldn't Load Data",
                                      "The data file exists but it could not be loaded!")
             exit()
+    """
 
     def create_agenda_safe(self):
         return self.tasks.calc_agenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
