@@ -72,6 +72,7 @@ class CalendarPlanner(object):
             with open(SAVEFILE, "rb") as f:
                 data = pickle.load(f)
             self.tasks = data[0]
+            self.tasks.today = datetime.date.today()
             self.max_hours = data[1]
             self.maxDays = data[2]
             self.workDays = data[3]
