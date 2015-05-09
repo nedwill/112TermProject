@@ -166,11 +166,13 @@ class TaskList(object):
         assignments_new = []
         for task, hours_remaining in assignments:
             #assert (time.time() - start_time) < 2
-            if self._plan_hours_day(day_tasks) < max_hours:
+            hours_used = self._plan_hours_day(day_tasks)
+            if hours_used < max_hours:
                 days_remaining = (task.due - start_day).days
                 if days_remaining == 0:
-                    raise NotEnoughTime
+                    raise NotEnoughTime #does this ever happen?
                 hours_per_day = self._ceil_div(hours_remaining, days_remaining)
+                hours_per_day = min(hours_per_day, max_hours - hours_used) #don't do too many hours
                 if hours_remaining - hours_per_day > 0:
                     assignments_new.append((task, hours_remaining - hours_per_day))
                 day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)

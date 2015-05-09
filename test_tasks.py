@@ -51,8 +51,11 @@ def test_calcagenda_assignments(l, max_hours, max_days):
     #difficult to model :(
     if agenda is not None:
         scheduled_hours = 0
-        for day in agenda:
+        today = datetime.date.today()
+        for i,day in enumerate(agenda):
             for task, hours in day:
+                assert task.due > (today + datetime.timedelta(i))
+                assert 0 <= hours <= max_hours
                 scheduled_hours += hours
         assert scheduled_hours == sum(x[1] - x[2] for x in l)
 
