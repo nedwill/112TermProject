@@ -1,5 +1,8 @@
 from tasks import TaskList, FixedTask, Task
 
+class ScheduleFailure(Exception):
+    pass
+
 class Planner(object):
     def __init__(self, tasks=None, max_hours=8):
         if tasks is None:
@@ -33,3 +36,21 @@ class Planner(object):
 
     def set_latest_task(self, date):
         self.tasks.latest_task = date
+
+    def attempt_to_schedule(self, modification=None, failure=None):
+        assert self.current_agenda is not None  # already working
+        if modification is None:
+            def modification():
+                pass
+        if failure is None:
+            def failure():
+                pass
+        modification()
+        agenda = self.planner.create_agenda_safe()
+        if agenda is None:
+            failure()
+            raise ScheduleFailure
+        self.current_agenda = agenda
+
+    def reschedule_task():
+        pass

@@ -10,7 +10,7 @@ import os
 import pickle
 from Tkinter import Tk, FALSE, Canvas, Button
 from graphics import gCalendar, Agenda, MEDIUMFONT, BIGFONT
-from planner import Planner
+from planner import Planner, ScheduleFailure
 
 SAVEFILE = "schedule.dat"
 
@@ -49,12 +49,10 @@ class Controller(object):
         return days
 
     def clearData(self):
-        check = tkMessageBox.askyesno("Are you sure?",
-                                      "Are you sure you want to clear all of your data?")
-        if check:
+        if tkMessageBox.askyesno("Are you sure?", "Are you sure you want to clear all of your data?"):
             self.planner = Planner()
             self.saveData()
-            self.attempt_to_schedule()
+            self._ui_attempt_to_schedule()
 
     def saveData(self):
         data = [self.planner,self.planner.max_hours,self.maxDays,self.workDays]
@@ -69,7 +67,7 @@ class Controller(object):
             self.planner.max_hours = data[1]
             self.maxDays = data[2]
             self.workDays = data[3]
-            self.attempt_to_schedule(err_msg="Couldn't load data.")
+            self._ui_attempt_to_schedule(err_msg="Couldn't load data.")
         except EOFError:
             return
         #except:
@@ -133,8 +131,6 @@ class Controller(object):
 
     def placeTask(self, date):
         task = self.dragTask[0]
-        originaldue = task.due
-        task.due = date
         if hasattr(task, "recurring") and task.recurring:
             tkMessageBox.showerror("Impossible to Schedule",
                                    "You can't reschedule a recurring task!")
@@ -143,12 +139,17 @@ class Controller(object):
             tkMessageBox.showerror("Impossible to Schedule",
                                    "You can't reschedule that task to the past!")
             return
+
+        
+        
         if date > self.planner.tasks.latest_task:
             self.planner.tasks.latest_task = date
-
+        originaldue = task.due
+        def modification():
+            task.due = date
         def failure():
             task.due = originaldue
-        self.attempt_to_schedule(failure,
+        self._ui_attempt_to_schedule(failure,
                                  "You can't finish that task in the given time per day!")
 
     def tryToPlace(self, event):
@@ -528,43 +529,36 @@ class Controller(object):
             self.workDays.append(dayint)
 
     # call failure if we can't schedule
-    def attempt_to_schedule(self, failure=None, err_msg="Unknown scheduling error."):
-        assert self.planner.current_agenda is not None  # already working
-        if failure is None:
-            def failure():
-                pass
-        agenda = self.planner.create_agenda_safe()
-        if agenda is None:
+    def _ui_attempt_to_schedule(self, modification=None, failure=None, err_msg="Unknown scheduling error."):
+        try:
+            self.planner.attempt_to_schedule(modification, failure)
+            self.selectAgenda(self.week, self.day)
+            self.agenda.draw(self.selectedAgenda)
+            self.cal.draw(self)
+            self.saveData()
+        except ScheduleFailure:
             tkMessageBox.showerror("Impossible to Schedule", err_msg)
-            failure()
-            return
-        self.planner.current_agenda = agenda
-        self.selectAgenda(self.week, self.day)
-        self.agenda.draw(self.selectedAgenda)
-        self.cal.draw(self)
-        self.saveData()
 
     def toggleWorkDay(self):
-        dayint = tkSimpleDialog.askinteger("Workday Toggler",
-                                           "Which day do you want to toggle?")
+        dayint = tkSimpleDialog.askinteger("Workday Toggler", "Which day do you want to toggle?")
         if dayint is None:
             return
         if not (0 <= dayint <= 6):
             tkMessageBox.showerror("Invalid Input", "Please enter a day 0-6.")
             return
-        self.toggleDayHelper(dayint)
 
-        def failure():
+        def modification():
             self.toggleDayHelper(dayint)
-        self.attempt_to_schedule(failure,
-                                 "You can't finish your tasks if you toggle that day!")
+
+        failure = modification
+        err_msg = "You can't finish your tasks if you toggle that day!"
+        self._ui_attempt_to_schedule(modification, failure, err_msg)
 
     def toggle_today(self):
-        self.work_today = not self.work_today
-
-        def failure():
+        def modification():
             self.work_today = not self.work_today
-        self.attempt_to_schedule(failure,
+        failure = modification
+        self._ui_attempt_to_schedule(modification, failure,
                                  "You can't finish your tasks if you toggle that day!")
 
     def init(self):
