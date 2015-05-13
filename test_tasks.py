@@ -2,7 +2,7 @@ from hypothesis import given, assume, Settings
 from hypothesis.specifiers import integers_in_range
 import datetime
 from tasks import FixedTask, TaskList, Task, InvalidTask
-from main import CalendarPlanner
+from main import Controller
 
 year = integers_in_range(2010, 2020)
 month = integers_in_range(1, 12)
@@ -13,7 +13,7 @@ recurring = integers_in_range(0, 6)
 #fixed and recurring
 @given([(str, [recurring], (year, month, day, hour), (year, month, day, hour))])
 def test_calcagenda_fixed(l):
-    cal = CalendarPlanner()
+    cal = Controller()
     tasks = TaskList()
     for name, recurring, time1, time2 in l:
         recurring = list(set(recurring)) #kill duplicates
