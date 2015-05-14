@@ -16,29 +16,6 @@ class Planner(object):
         self.max_hours = max_hours
         self.maxDays = False
 
-    def create_agenda_safe(self):
-        return self.tasks.calc_agenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
-
-    def createAgenda(self):
-        self.current_agenda = self.create_agenda_safe()
-
-    def add_task(self, description, hours, hoursDone, due):
-        task = Task(description, hours, hoursDone, due)
-        self.tasks.add(task)
-
-    def add_fixed_task(self, description, startTime, endTime, recurring=None):
-        task = FixedTask(description, startTime, endTime, recurring)
-        self.tasks.add(task)
-
-    def remove_task(self, description):
-        self.tasks.remove(description)
-
-    def get_latest_task(self):
-        return self.tasks.latest_task
-
-    def set_latest_task(self, date):
-        self.tasks.latest_task = date
-
     def _attempt_to_schedule(self, modification=None, failure=None, err_msg="Unknown scheduling error."):
         assert self.current_agenda is not None  # already working
         if modification is None:
@@ -54,20 +31,46 @@ class Planner(object):
             raise ScheduleFailure(msg=err_msg)
         self.current_agenda = agenda
 
-    def init_schedule(self):
+    def create_agenda_safe(self):
+        return self.tasks.calc_agenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
+
+    def createAgenda(self):
+        self.current_agenda = self.create_agenda_safe()
+
+    def add_task(self, description, hours, hoursDone, due):
+        task = Task(description, hours, hoursDone, due)
+        def modification():
+            self.tasks.add(task)
+        def failure():
+            self.tasks.remove(task)
+        err_msg = "You can't finish that task in the given time per day!"
+        self._attempt_to_schedule(modification, failure, err_msg)
+
+    def add_fixed_task(self, description, startTime, endTime, recurring=None):
+        task = FixedTask(description, startTime, endTime, recurring)
+        self.tasks.add(task)
+
+    def remove_task(self, description):
+        self.tasks.remove(description)
         self._attempt_to_schedule()
 
-    def toggleDayHelper(self, day):
-        if day in self.workDays:
-            self.workDays.remove(day)
-        else:
-            self.workDays.add(day)
+    def get_latest_task(self):
+        return self.tasks.latest_task
+
+    def set_latest_task(self, date):
+        self.tasks.latest_task = date
+
+    def init_schedule(self):
+        self._attempt_to_schedule()
 
     def toggle_work_day(self, day):
         if not (0 <= day <= 6):
             raise ScheduleFailure(title="Invalid Input", msg="Please enter a day 0-6.")
         def modification():
-            self.toggleDayHelper(day)
+            if day in self.workDays:
+                self.workDays.remove(day)
+            else:
+                self.workDays.add(day)
         failure = modification
         err_msg = "You can't finish your tasks if you toggle that day!"
         self._attempt_to_schedule(modification, failure, err_msg)

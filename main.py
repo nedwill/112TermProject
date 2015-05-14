@@ -232,12 +232,10 @@ class Controller(object):
                                    "You can't add something in the past!")
             return
         hoursDone = 0  # is this assumption safe?
-        self.planner.add_task(description, hours, hoursDone, due)
 
-        def failure():
-            self.planner.remove_task(description)
-        self.attempt_to_schedule(failure,
-                                 "You can't finish that task in the given time per day!")
+        def f():
+            self.planner.add_task(description, hours, hoursDone, due)
+        self._update_schedule(f)
 
     def addFixedTask(self):  # same, but with a fixed task
         description = tkSimpleDialog.askstring("Task Adder",
@@ -456,12 +454,9 @@ class Controller(object):
         dayint = tkSimpleDialog.askinteger("Workday Toggler", "Which day do you want to toggle?")
         if dayint is None:
             return
-
-        try:
+        def f():
             self.planner.toggle_work_day(dayint)
-            self._refresh_ui()
-        except ScheduleFailure as e:
-            self._schedule_fail_window(e.title, e.msg)
+        self._update_schedule(f)
 
     def toggle_work_today(self):
         self._update_schedule(self.planner.toggle_work_today)
