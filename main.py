@@ -15,15 +15,12 @@ from planner import Planner, ScheduleFailure
 SAVEFILE = "schedule.dat"
 
 class Day(object):
-
     def __init__(self, year, month, day):
         self.year = year
         self.month = month
         self.day = day
 
-
 class Controller(object):
-
     def __init__(self, width=900, height=600):
         self.width = width
         self.height = height
@@ -41,13 +38,6 @@ class Controller(object):
                     self.week = week
                     self.day = day
 
-    def getAgendaDays(self):
-        today = datetime.date.today()
-        days = []
-        for i in xrange(len(self.planner.current_agenda)):
-            days += [today + datetime.timedelta(i)]
-        return days
-
     def clearData(self):
         if tkMessageBox.askyesno("Are you sure?", "Are you sure you want to clear all of your data?"):
             self.planner = Planner()
@@ -55,18 +45,14 @@ class Controller(object):
             self._ui_attempt_to_schedule()
 
     def saveData(self):
-        data = [self.planner,self.planner.max_hours,self.maxDays,self.workDays]
         with open(SAVEFILE, "wb") as f:
-            pickle.dump(data, f)
+            pickle.dump(self.planner, f)
 
     def loadData(self):
         try:
             with open(SAVEFILE, "rb") as f:
-                data = pickle.load(f)
+                self.planner = pickle.load(f)
             self.planner.tasks.today = datetime.date.today() #this shouldn't be here
-            self.planner.max_hours = data[1]
-            self.maxDays = data[2]
-            self.workDays = data[3]
             self._ui_attempt_to_schedule(err_msg="Couldn't load data.")
         except EOFError:
             return
