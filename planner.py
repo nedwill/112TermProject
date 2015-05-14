@@ -37,8 +37,7 @@ class Planner(object):
     def createAgenda(self):
         self.current_agenda = self.create_agenda_safe()
 
-    def add_task(self, description, hours, hoursDone, due):
-        task = Task(description, hours, hoursDone, due)
+    def _add_task_and_schedule(self, task):
         def modification():
             self.tasks.add(task)
         def failure():
@@ -46,12 +45,21 @@ class Planner(object):
         err_msg = "You can't finish that task in the given time per day!"
         self._attempt_to_schedule(modification, failure, err_msg)
 
+    def add_task(self, description, hours, hoursDone, due):
+        task = Task(description, hours, hoursDone, due)
+        self._add_task_and_schedule(task)
+
     def add_fixed_task(self, description, startTime, endTime, recurring=None):
         task = FixedTask(description, startTime, endTime, recurring)
-        self.tasks.add(task)
+        self._add_task_and_schedule(task)
 
     def remove_task(self, description):
-        self.tasks.remove(description)
+        if description not in self.tasks.fixed and description not in self.tasks.assignments:
+            raise ScheduleFailure(title="Invalid Task", msg="There was no task found matching that description!")
+        def modification():
+            self.tasks.remove(description)
+        def failure(): #this can't fail as there are less things in the schedule
+            pass
         self._attempt_to_schedule()
 
     def get_latest_task(self):

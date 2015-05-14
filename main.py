@@ -297,12 +297,10 @@ class Controller(object):
             tkMessageBox.showerror("Time Entry Error",
                                    "Invalid Time Range Entered!")
             return
-        self.planner.add_fixed_task(description, startTime, endTime)
-
-        def failure():
-            self.planner.tasks.remove(description)
-        self.attempt_to_schedule(failure,
-                                 "You can't finish that task in the given time per day!")
+        
+        def f():
+            self.planner.add_fixed_task(description, startTime, endTime)
+        self._update_schedule(f)
 
     def addRecurringTask(self):
         description = tkSimpleDialog.askstring("Task Adder",
@@ -374,39 +372,29 @@ class Controller(object):
             tkMessageBox.showerror("Time Entry Error",
                                    "Invalid Time Range Entered!")
             return
-        
-        self.planner.add_fixed_task(description, startTime, endTime, recurring)
 
-        def failure():
-            self.planner.tasks.remove(description)
-        self.attempt_to_schedule(failure,
-                                 "You can't finish that task in the given time per day!")
+        def f():
+            self.planner.add_fixed_task(description, startTime, endTime, recurring)
+        self._update_schedule(f)
 
     def removeTask(self):
-        description = tkSimpleDialog.askstring("Task Remover",
-                                               "What is the name of your task?")
+        description = tkSimpleDialog.askstring("Task Remover", "What is the name of your task?")
         if description is None:
             return
-        removed = self.planner.tasks.remove(description)
-        if removed is None:
-            tkMessageBox.showinfo("You Should Know...",
-                                  "There was no task found matching that description!")
-            return
-        self.attempt_to_schedule()
+        def f():
+            self.planner.remove_task(description)
+        self._update_schedule(f)
 
     def add_hours(self):
-        description = tkSimpleDialog.askstring("Task Completer",
-                                               "What is the name of your task?")
+        description = tkSimpleDialog.askstring("Task Completer", "What is the name of your task?")
         if description is None:
             return
-        hours = tkSimpleDialog.askinteger("Task Completer",
-                                          "How many hours did you complete?")
+        hours = tkSimpleDialog.askinteger("Task Completer", "How many hours did you complete?")
         if hours is None:
             return
         added = self.planner.tasks.add_hours(description, hours)
         if added is None:
-            tkMessageBox.showinfo("You Should Know...",
-                                  "There was no task found matching that description!")
+            tkMessageBox.showinfo("You Should Know...", "There was no task found matching that description!")
             return
         self.attempt_to_schedule()
 
