@@ -391,11 +391,9 @@ class Controller(object):
         hours = tkSimpleDialog.askinteger("Task Completer", "How many hours did you complete?")
         if hours is None:
             return
-        added = self.planner.tasks.add_hours(description, hours)
-        if added is None:
-            tkMessageBox.showinfo("You Should Know...", "There was no task found matching that description!")
-            return
-        self.attempt_to_schedule()
+        def f():
+        	self.planner.add_hours(description, hours)
+        self._update_schedule(f)
 
     def _redraw_calendar(self):
         self.cal.clear()

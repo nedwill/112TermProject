@@ -60,7 +60,18 @@ class Planner(object):
             self.tasks.remove(description)
         def failure(): #this can't fail as there are less things in the schedule
             pass
-        self._attempt_to_schedule()
+        self._attempt_to_schedule(modification, failure)
+
+    def add_hours(self, description, hours):
+        if hours < 1:
+            raise ScheduleFailure(title="Invalid Hours", "Hours completed must be at least 1.")
+        if description not in self.tasks.assignments:
+            raise ScheduleFailure(title="Invalid Task", msg="There was no task found matching that description!")
+        def modification():
+            self.tasks.add_hours(description, hours)
+        def failure():
+            pass #cannot cause failure by adding hours
+        self._attempt_to_schedule(modification, failure)
 
     def get_latest_task(self):
         return self.tasks.latest_task
