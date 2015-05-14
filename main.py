@@ -41,8 +41,8 @@ class Controller(object):
     def clearData(self):
         if tkMessageBox.askyesno("Are you sure?", "Are you sure you want to clear all of your data?"):
             self.planner = Planner()
+            self._refresh_ui()
             self.saveData()
-            self._ui_attempt_to_schedule()
 
     def saveData(self):
         with open(SAVEFILE, "wb") as f:
@@ -56,38 +56,9 @@ class Controller(object):
             self._ui_attempt_to_schedule(err_msg="Couldn't load data.")
         except EOFError:
             return
-        #except:
-        #    tkMessageBox.showwarning("Couldn't Load Data",
-        #     "The data file exists but it could not be loaded!")
-
-    """
-    def saveData(self):
-        with open(SAVEFILE, "w") as f:
-            data = {
-                "tasks": self.planner.tasks,
-                "max_hours": self.planner.max_hours,
-                "max_days": self.maxDays,
-                "work_days": self.workDays
-            }
-            f.write(json.dumps(data))
-
-    def loadData(self):
-        try:
-            with open(SAVEFILE, "r") as f:
-                data = json.loads(f.read())
-                self.planner.tasks = data["tasks"]
-                self.planner.max_hours = data["hours"]
-                self.maxDays = data["max_days"]
-                self.workDays = data["work_days"]
-                self.createAgenda()  # update agenda
-                self.selectAgenda(self.week, self.day)
-                self.agenda.draw(self.selectedAgenda)
-                self.cal.draw(self)
         except:
             tkMessageBox.showwarning("Couldn't Load Data",
-                                     "The data file exists but it could not be loaded!")
-            exit()
-    """
+             "The data file exists but it could not be loaded!")
 
     def drawDragDrop(self, event):
         if self.taskDraw is not None:
@@ -119,10 +90,7 @@ class Controller(object):
         x = event.x
         y = event.y
         left = int(self.cal.left)  # take all information from calendar
-        # class, no copy-paste
         top = int(self.cal.top)
-        #right = int(self.cal.right)
-        #bottom = int(self.cal.bottom)
         cellWidth = int(self.cal.cellWidth)
         cellHeight = int(self.cal.cellHeight)
         col = (x - left) / cellWidth
@@ -134,8 +102,6 @@ class Controller(object):
                 month = self.cal.month
                 year = self.cal.year
                 date = datetime.date(year, month, day)
-                # self.week = row #used for new selected Agenda?
-                #self.day = col
                 self.placeTask(date)
 
     def mouseReleased(self, event):
@@ -152,11 +118,8 @@ class Controller(object):
         self.checkIfAgenda(event)
         if self.dragTask is not None:
             return
-        left = int(self.cal.left)  # take all information from calendar class,
-        # no copy-paste
+        left = int(self.cal.left)
         top = int(self.cal.top)
-        #right = int(self.cal.right)
-        #bottom = int(self.cal.bottom)
         cellWidth = int(self.cal.cellWidth)
         cellHeight = int(self.cal.cellHeight)
         col = (event.x - left) / cellWidth
@@ -202,7 +165,6 @@ class Controller(object):
             self.cal.clear()
             self.cal.draw(self)
             selectedDayDistance = (selectedDay - datetime.date.today()).days
-            # if selectedDayDistance > 0 and selectedDayDistance < len(agenda):
             selectedAgenda = None
             if selectedDayDistance >= 0 and selectedDayDistance < len(self.planner.current_agenda):
                 selectedAgenda = self.planner.current_agenda[selectedDayDistance]
@@ -220,7 +182,7 @@ class Controller(object):
                 selectedAgenda = self.planner.current_agenda[selectedDayDistance]
             return selectedAgenda
 
-    def update_agenda_title(self):
+    def _update_agenda_title(self):
         self.canvas.delete(self.agenda_title)
         self.agenda_title = self.canvas.create_text(self.width * 17. / 20,
                                                     self.height * 1. / 20,
@@ -229,30 +191,17 @@ class Controller(object):
                                                     font=BIGFONT)
 
     def setMaxHours(self):
-        original = self.planner.max_hours
-        maxHours = tkSimpleDialog.askinteger("Hour Set",
-                                             "How many hours will you work per day? Currently {} hours.".format(self.planner.max_hours))
-        if maxHours is None:
+        new_max_hours = tkSimpleDialog.askinteger("Hour Set",
+            "How many hours will you work per day? Currently {} hours.".format(self.planner.max_hours))
+        if new_max_hours is None:
             return
-        if maxHours > 24 or maxHours < 0:
-            tkMessageBox.showerror("Invalid Input",
-                                   "Please enter an integer 0-24.")
-            return
-        self.planner.max_hours = maxHours
-
-        def failure():
-            self.planner.max_hours = original
-        self.attempt_to_schedule(failure,
-                                 "You can't finish your tasks in the given work hours per day!")
-        self.update_agenda_title()
+        def f():
+            self.planner.set_max_hours(new_max_hours)
+            self._update_agenda_title()
+        self._update_schedule(f)
 
     def toggleMaxDays(self):
-        self.maxDays = not self.maxDays
-
-        def failure():
-            self.maxDays = not self.maxDays
-        self.attempt_to_schedule(failure,
-                                 "You can't finish your tasks if you toggle your schedule optimization!")
+        self._update_schedule(self.planner.toggle_max_days())
 
     def addAssignment(self):  # graphical implementation
         description = tkSimpleDialog.askstring("Task Adder",
@@ -524,7 +473,7 @@ class Controller(object):
         self.planner.createAgenda()
         self.cal.draw(self)
         # draw agenda label
-        self.update_agenda_title()
+        self._update_agenda_title()
         self.agenda = Agenda(self.canvas, self.width, self.height, 1, 1, 2012)
         self.agenda.clear()
         # self.agenda.draw([0]) #draw today's agenda when initializing
@@ -590,7 +539,7 @@ class Controller(object):
         if os.path.exists(SAVEFILE):
             self.loadData()
         self.canvas.delete(self.agenda_title)
-        self.update_agenda_title()
+        self._update_agenda_title()
 
         # set up events
         def mousePressedWrapper(event):

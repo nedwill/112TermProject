@@ -54,6 +54,9 @@ class Planner(object):
             raise ScheduleFailure(msg=err_msg)
         self.current_agenda = agenda
 
+    def init_schedule(self):
+        self._attempt_to_schedule()
+
     def toggleDayHelper(self, day):
         if day in self.workDays:
             self.workDays.remove(day)
@@ -90,4 +93,24 @@ class Planner(object):
         def failure():
             task.due = originaldue
         err_msg = "You can't finish that task in the given time per day!"
+        self._attempt_to_schedule(modification, failure, err_msg)
+
+    def set_max_hours(self, new_max_hours):
+        original = self.planner.max_hours
+        if new_max_hours > 24 or new_max_hours < 0:
+            raise ScheduleFailure(title="Invalid Input", msg="Please enter an integer 0-24.")
+        
+        def modification():
+            self.planner.max_hours = new_max_hours
+        def failure():
+            self.planner.max_hours = original
+        err_msg = "You can't finish your tasks in the given work hours per day!"
+
+        self._attempt_to_schedule(modification, failure, err_msg)
+
+    def toggle_max_days(self):
+        def modification():
+            self.maxDays = not self.maxDays
+        failure = modification
+        err_msg = "You can't finish your tasks if you toggle your schedule optimization!"
         self._attempt_to_schedule(modification, failure, err_msg)
