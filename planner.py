@@ -3,6 +3,7 @@ import datetime
 
 class ScheduleFailure(Exception):
     def __init__(self, title="Impossible to Schedule", msg="Unknown scheduling error."):
+        self.title = title
         self.msg = msg
 
 class Planner(object):
@@ -64,7 +65,7 @@ class Planner(object):
 
     def add_hours(self, description, hours):
         if hours < 1:
-            raise ScheduleFailure(title="Invalid Hours", "Hours completed must be at least 1.")
+            raise ScheduleFailure(title="Invalid Hours", msg="Hours completed must be at least 1.")
         if description not in self.tasks.assignments:
             raise ScheduleFailure(title="Invalid Task", msg="There was no task found matching that description!")
         def modification():
