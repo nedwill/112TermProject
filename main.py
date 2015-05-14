@@ -53,12 +53,12 @@ class Controller(object):
             with open(SAVEFILE, "rb") as f:
                 self.planner = pickle.load(f)
             self.planner.tasks.today = datetime.date.today() #this shouldn't be here
-            self._ui_attempt_to_schedule(err_msg="Couldn't load data.")
+            self._refresh_ui()
         except EOFError:
             return
-        except:
-            tkMessageBox.showwarning("Couldn't Load Data",
-             "The data file exists but it could not be loaded!")
+        #except:
+        #    tkMessageBox.showwarning("Couldn't Load Data",
+        #     "The data file exists but it could not be loaded!")
 
     def drawDragDrop(self, event):
         if self.taskDraw is not None:
@@ -172,8 +172,7 @@ class Controller(object):
             return selectedAgenda
 
     def getAgenda(self, row, col):
-        if row >= 0 and col >= 0 and row < self.cal.weeks and col < 7 and\
-                self.cal.monthArray[row][col] != 0:
+        if row >= 0 and col >= 0 and row < self.cal.weeks and col < 7 and self.cal.monthArray[row][col] != 0:
             selectedDay = datetime.date(self.cal.year, self.cal.month,
                                         self.cal.monthArray[row][col])
             selectedDayDistance = (selectedDay - datetime.date.today()).days
@@ -201,7 +200,7 @@ class Controller(object):
         self._update_schedule(f)
 
     def toggleMaxDays(self):
-        self._update_schedule(self.planner.toggle_max_days())
+        self._update_schedule(self.planner.toggle_max_days)
 
     def addAssignment(self):  # graphical implementation
         description = tkSimpleDialog.askstring("Task Adder",
@@ -398,7 +397,7 @@ class Controller(object):
             return
         self.attempt_to_schedule()
 
-    def redraw_calendar(self):
+    def _redraw_calendar(self):
         self.cal.clear()
         self.cal = gCalendar(self.canvas, self.width, self.height,
                              self.selected_day.month, self.selected_day.year)
@@ -410,7 +409,7 @@ class Controller(object):
         else:
             self.selected_day.month = 12
             self.selected_day.year -= 1
-        self.redraw_calendar()
+        self._redraw_calendar()
 
     def nextMonth(self):
         if self.selected_day.month < 12:
@@ -418,7 +417,7 @@ class Controller(object):
         else:
             self.selected_day.month = 1
             self.selected_day.year += 1
-        self.redraw_calendar()
+        self._redraw_calendar()
 
     def _schedule_fail_window(self, title, msg):
         tkMessageBox.showerror(title, msg)
