@@ -203,16 +203,13 @@ class Controller(object):
         self._update_schedule(self.planner.toggle_max_days)
 
     def addAssignment(self):  # graphical implementation
-        description = tkSimpleDialog.askstring("Task Adder",
-                                               "What is the name of your task?")
+        description = tkSimpleDialog.askstring("Task Adder", "What is the name of your task?")
         if description is None:
             return
-        hours = tkSimpleDialog.askinteger("Task Adder",
-                                          "How many hours will it take to complete?")
+        hours = tkSimpleDialog.askinteger("Task Adder", "How many hours will it take to complete?")
         if hours is None:
             return
-        dueString = tkSimpleDialog.askstring("Task Adder",
-                                             "When is it due? Enter MM/DD or MM/DD/YYYY")
+        dueString = tkSimpleDialog.askstring("Task Adder", "When is it due? Enter MM/DD or MM/DD/YYYY")
         if dueString is None:
             return
         month = int(dueString[0:2])
@@ -224,11 +221,9 @@ class Controller(object):
         try:
             due = datetime.date(year, month, day)
         except:
-            tkMessageBox.showerror("Date Entry Error",
-                                   "Invalid Date Entered!")
+            tkMessageBox.showerror("Date Entry Error", "Invalid Date Entered!")
         if due < datetime.date.today():
-            tkMessageBox.showerror("Date Entry Error",
-                                   "You can't add something in the past!")
+            tkMessageBox.showerror("Date Entry Error", "You can't add something in the past!")
             return
         hoursDone = 0  # is this assumption safe?
 
@@ -237,12 +232,10 @@ class Controller(object):
         self._update_schedule(f)
 
     def addFixedTask(self):  # same, but with a fixed task
-        description = tkSimpleDialog.askstring("Task Adder",
-                                               "What is the name of your task?")
+        description = tkSimpleDialog.askstring("Task Adder", "What is the name of your task?")
         if description is None:
             return
-        dueString = tkSimpleDialog.askstring("Task Adder",
-                                             "What day is it? Enter MM/DD or MM/DD/YYYY")
+        dueString = tkSimpleDialog.askstring("Task Adder", "What day is it? Enter MM/DD or MM/DD/YYYY")
         if dueString is None:
             return
         month = int(dueString[0:2])
@@ -254,14 +247,11 @@ class Controller(object):
         try:
             due = datetime.date(year, month, day)
         except:
-            tkMessageBox.showerror("Date Entry Error",
-                                   "Invalid Date Entered!")
+            tkMessageBox.showerror("Date Entry Error", "Invalid Date Entered!")
         if due < datetime.date.today():
-            tkMessageBox.showerror("Date Entry Error",
-                                   "You can't add something in the past!")
+            tkMessageBox.showerror("Date Entry Error", "You can't add something in the past!")
             return
-        timeString = tkSimpleDialog.askstring("Task Adder",
-                                              "What time is it? Enter HH-HH or HH:MM-HH:MM")
+        timeString = tkSimpleDialog.askstring("Task Adder", "What time is it? Enter HH-HH or HH:MM-HH:MM")
         # print timeString
         if timeString is None:
             return
@@ -270,13 +260,10 @@ class Controller(object):
             endTime = int(timeString[3:5])
             if (startTime < 0 or endTime < 0 or startTime > 24 or
                     endTime > 24 or startTime > endTime):
-                tkMessageBox.showerror("Time Entry Error",
-                                       "Invalid Time Range Entered!")
+                tkMessageBox.showerror("Time Entry Error", "Invalid Time Range Entered!")
                 return
-            startTime = datetime.datetime(due.year, due.month,
-                                          due.day, int(timeString[0:2]))  # fix this for efficiency?
-            endTime = datetime.datetime(due.year, due.month,
-                                        due.day, int(timeString[3:5]))
+            startTime = datetime.datetime(due.year, due.month, due.day, int(timeString[0:2]))  # fix this for efficiency?
+            endTime = datetime.datetime(due.year, due.month, due.day, int(timeString[3:5]))
         elif len(timeString) == 11 and timeString[2] == ":" and\
                 timeString[5] == "-" and timeString[8] == ":":
             startHour = int(timeString[0:2])
