@@ -108,10 +108,7 @@ class Controller(object):
             self.canvas.delete(self.taskDraw)
             x = event.x
             y = event.y
-            self.taskDraw = self.canvas.create_text(x, y,
-                                                    text=self.dragTask[
-                                                        0].description,
-                                                    font=MEDIUMFONT)
+            self.taskDraw = self.canvas.create_text(x, y, text=self.dragTask[0].description, font=MEDIUMFONT)
 
     def checkIfAgenda(self, event):
         x = event.x
@@ -124,33 +121,13 @@ class Controller(object):
             index = (y - top - 20) / 20  # get index
             if len(self.selectedAgenda) > index:
                 self.dragTask = self.selectedAgenda[index]
-                self.taskDraw = self.canvas.create_text(x, y,
-                                                        text=self.dragTask[
-                                                            0].description,
-                                                        font=MEDIUMFONT)
+                self.taskDraw = self.canvas.create_text(x, y, text=self.dragTask[0].description, font=MEDIUMFONT)
 
     def placeTask(self, date):
         task = self.dragTask[0]
-        if hasattr(task, "recurring") and task.recurring:
-            tkMessageBox.showerror("Impossible to Schedule",
-                                   "You can't reschedule a recurring task!")
-            return
-        if date < datetime.date.today():
-            tkMessageBox.showerror("Impossible to Schedule",
-                                   "You can't reschedule that task to the past!")
-            return
-
-        
-        
-        if date > self.planner.tasks.latest_task:
-            self.planner.tasks.latest_task = date
-        originaldue = task.due
-        def modification():
-            task.due = date
-        def failure():
-            task.due = originaldue
-        self._ui_attempt_to_schedule(failure,
-                                 "You can't finish that task in the given time per day!")
+        def f():
+            self.planner.reschedule_task(task, date)
+        self._update_schedule(f)
 
     def tryToPlace(self, event):
         x = event.x
@@ -522,44 +499,37 @@ class Controller(object):
             self.selected_day.year += 1
         self.redraw_calendar()
 
-    def toggleDayHelper(self, dayint):
-        if dayint in self.workDays:
-            self.workDays.remove(dayint)
-        else:
-            self.workDays.append(dayint)
+    def _schedule_fail_window(self, title, msg):
+        tkMessageBox.showerror(title, msg)
 
     # call failure if we can't schedule
-    def _ui_attempt_to_schedule(self, modification=None, failure=None, err_msg="Unknown scheduling error."):
+    def _refresh_ui(self):
+        self.selectAgenda(self.week, self.day)
+        self.agenda.draw(self.selectedAgenda)
+        self.cal.draw(self)
+        self.saveData()
+
+    def _update_schedule(self, f):
+        "take a function from the planner and try to update the schedule with it"
         try:
-            self.planner.attempt_to_schedule(modification, failure)
-            self.selectAgenda(self.week, self.day)
-            self.agenda.draw(self.selectedAgenda)
-            self.cal.draw(self)
-            self.saveData()
-        except ScheduleFailure:
-            tkMessageBox.showerror("Impossible to Schedule", err_msg)
+            f()
+            self._refresh_ui()
+        except ScheduleFailure as e:
+            self._schedule_fail_window(e.title, e.msg)
 
     def toggleWorkDay(self):
         dayint = tkSimpleDialog.askinteger("Workday Toggler", "Which day do you want to toggle?")
         if dayint is None:
             return
-        if not (0 <= dayint <= 6):
-            tkMessageBox.showerror("Invalid Input", "Please enter a day 0-6.")
-            return
 
-        def modification():
-            self.toggleDayHelper(dayint)
+        try:
+            self.planner.toggle_work_day(dayint)
+            self._refresh_ui()
+        except ScheduleFailure as e:
+            self._schedule_fail_window(e.title, e.msg)
 
-        failure = modification
-        err_msg = "You can't finish your tasks if you toggle that day!"
-        self._ui_attempt_to_schedule(modification, failure, err_msg)
-
-    def toggle_today(self):
-        def modification():
-            self.work_today = not self.work_today
-        failure = modification
-        self._ui_attempt_to_schedule(modification, failure,
-                                 "You can't finish your tasks if you toggle that day!")
+    def toggle_work_today(self):
+        self._update_schedule(self.planner.toggle_work_today)
 
     def init(self):
         # draw calendar label
@@ -593,7 +563,7 @@ class Controller(object):
         b14 = Button(
             self.canvas, text="Toggle Work Days", command=self.toggleWorkDay)
         b15 = Button(
-            self.canvas, text="Toggle Today", command=self.toggle_today)
+            self.canvas, text="Toggle Today", command=self.toggle_work_today)
         calwidth = (self.cal.right + self.cal.left) / 2
         col1 = self.cal.left + 1 * (calwidth / 2) - 60
         col2 = self.cal.left + 2 * (calwidth / 2) - 30
