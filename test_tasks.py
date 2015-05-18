@@ -3,7 +3,6 @@ from hypothesis.strategies import integers, text, booleans, lists, tuples
 import datetime
 from tasks import FixedTask, Task, InvalidTask
 from task_manager import TaskManager
-from main import Controller
 
 year = integers(2010, 2020)
 month = integers(1, 12)
@@ -12,7 +11,7 @@ hour = integers(0, 23)
 recurring = integers(0, 6)
 
 #fixed and recurring
-@given(lists(tuples(text(), lists(recurring), tuples(year, month, day, hour), tuples(year, month, day, hour))), integers())
+@given(lists(tuples(text(), lists(recurring), tuples(year, month, day, hour), tuples(year, month, day, hour))), integers(), settings=Settings(max_examples=100000))
 def test_calcagenda_fixed(l, max_hours):
     tasks = TaskManager()
     for name, recurring, time1, time2 in l:
@@ -27,7 +26,7 @@ def test_calcagenda_fixed(l, max_hours):
 #don't test names; no interesting bugs there
 #from hypothesis import Settings
 #@given([(int, int, (year, month, day))], hour, bool, settings=Settings(max_examples=5000))
-@given(lists(tuples(integers(), integers(), tuples(year, month, day))), hour, booleans())
+@given(lists(tuples(integers(), integers(), tuples(year, month, day))), hour, booleans(), settings=Settings(max_examples=100000))
 def test_calcagenda_assignments(l, max_hours, max_days):
     #print max_hours, l
     tasks = TaskManager()

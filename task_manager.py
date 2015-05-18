@@ -176,7 +176,7 @@ class TaskManager(object):
         return day_tasks, assignments_new
 
     def _fill_day_trivially(self, day_tasks, assignments, start_day, max_hours, max_days):
-        day_tasks, assignments_new = self._init_schedule_evenly(assignments, day_tasks, max_hours, start_day)
+        "for testing purposes"
         assignments_new = []
         for task, hours_remaining in assignments:
             hours_used = self._plan_hours_day(day_tasks)
