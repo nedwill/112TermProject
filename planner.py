@@ -8,7 +8,7 @@ class ScheduleFailure(Exception):
         self.msg = msg
 
 class Planner(object):
-    def __init__(self, tasks=None, max_hours=8):
+    def __init__(self, tasks=None, max_hours=8, max_days=False, debug=False):
         if tasks is None:
             self.tasks = TaskManager()
         else:
@@ -16,9 +16,13 @@ class Planner(object):
         self.work_today = True
         self.workDays = set(range(7))
         self.max_hours = max_hours
-        self.maxDays = False
+        self.max_days = max_days
+        self.debug = debug
 
     def _attempt_to_schedule(self, modification=None, failure=None, err_msg="Unknown scheduling error."):
+        if self.debug:
+            modification()
+            return
         assert self.current_agenda is not None  # already working
         if modification is None:
             def modification():
@@ -34,7 +38,11 @@ class Planner(object):
         self.current_agenda = agenda
 
     def create_agenda_safe(self):
-        return self.tasks.calc_agenda(self.max_hours, self.maxDays, self.workDays, self.work_today)
+        return self.tasks.calc_agenda(self.max_hours, self.max_days, self.workDays, self.work_today, trivial=False)
+
+    def create_agenda_trivial(self):
+        "for testing"
+        return self.tasks.calc_agenda(self.max_hours, self.max_days, self.workDays, self.work_today, trivial=True)
 
     def createAgenda(self):
         self.current_agenda = self.create_agenda_safe()
@@ -52,6 +60,10 @@ class Planner(object):
         self._add_task_and_schedule(task)
 
     def add_fixed_task(self, description, startTime, endTime, recurring=None):
+        days = (endTime - startTime).days
+        if days > 0 or endTime.day != startTime.day:
+            raise ScheduleFailure(title="Invalid Task",
+                msg="Your task cannot be longer than 24 hours or span multiple days.")
         task = FixedTask(description, startTime, endTime, recurring)
         self._add_task_and_schedule(task)
 
@@ -134,7 +146,7 @@ class Planner(object):
 
     def toggle_max_days(self):
         def modification():
-            self.maxDays = not self.maxDays
+            self.max_days = not self.max_days
         failure = modification
         err_msg = "You can't finish your tasks if you toggle your schedule optimization!"
         self._attempt_to_schedule(modification, failure, err_msg)

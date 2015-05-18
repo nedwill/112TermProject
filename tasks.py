@@ -23,6 +23,8 @@ class FixedTask(Task):
     def __init__(self,description,startTime,endTime,recurring=None):
         self.startTime = startTime
         self.endTime = endTime
+        if endTime <= startTime:
+            raise InvalidTask
         hours = ((endTime - startTime).seconds)/3600
         due = startTime.date()
         hours_done = 0 #can't have hours completed in advance on a fixed event
