@@ -17,7 +17,10 @@ def days(x):
     for i in range(7):
         if (x >> i) & 1:
             ret.append(i)
+    assert sum(1 << i for i in ret) == x
     return ret
+
+assert days(0b0100110) == [1, 2, 5]
 
 real_today = datetime.date.today()
 real_tomorrow = real_today + datetime.timedelta(1)
@@ -26,7 +29,7 @@ real_dayafter = real_today + datetime.timedelta(2)
 @given(lists(tuples(recurring, tuples(year, month, day, hour), hour)), lists(tuples(hours, hours,
     tuples(year, month, day))), hour, booleans(), settings=Settings(max_examples=10000))
 @example([(0, (real_tomorrow.year, real_tomorrow.month, real_tomorrow.day, 10), 18)],
-    [(8, 0, (real_dayafter.year, real_dayafter.month, real_dayafter.day))], 8, True)
+    [(8, 0, (real_dayafter.year, real_dayafter.month, real_dayafter.day))], 8, False)
 def test_calcagenda(fixed_l, l, max_hours, max_days):
     planner = Planner(max_hours=max_hours, max_days=max_days, debug=True)
     fixed_l = [("fixed"+str(name), recurring, time1, time2_hour) for (name, (recurring, time1, time2_hour)) in enumerate(fixed_l)]
@@ -52,9 +55,7 @@ def test_calcagenda(fixed_l, l, max_hours, max_days):
             return
     agenda = planner.create_agenda_safe()
     trivial_agenda = planner.create_agenda_trivial()
-    planner.toggle_max_days()
-    other_agenda = planner.create_agenda_safe()
-    assert (trivial_agenda is None) is (agenda is None) is (other_agenda is None)
+    assert (trivial_agenda is None) is (agenda is None)
     if agenda is not None:
         scheduled_hours = 0
         today = datetime.date.today()
