@@ -1,7 +1,8 @@
 from hypothesis import given, assume, Settings
 from hypothesis.specifiers import integers_in_range
 import datetime
-from tasks import FixedTask, TaskList, Task, InvalidTask
+from tasks import FixedTask, Task, InvalidTask
+from task_manager import TaskManager
 from main import Controller
 
 year = integers_in_range(2010, 2020)
@@ -14,7 +15,7 @@ recurring = integers_in_range(0, 6)
 @given([(str, [recurring], (year, month, day, hour), (year, month, day, hour))])
 def test_calcagenda_fixed(l):
     cal = Controller()
-    tasks = TaskList()
+    tasks = TaskManager()
     for name, recurring, time1, time2 in l:
         recurring = list(set(recurring)) #kill duplicates
         try:
@@ -31,7 +32,7 @@ def test_calcagenda_fixed(l):
 @given([(int, int, (year, month, day))], hour, bool)
 def test_calcagenda_assignments(l, max_hours, max_days):
     #print max_hours, l
-    tasks = TaskList()
+    tasks = TaskManager()
     try:
         assume(all(datetime.date(*x[2]) > datetime.date.today() for x in l))
     except ValueError:
