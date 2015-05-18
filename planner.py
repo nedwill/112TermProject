@@ -69,7 +69,7 @@ class Planner(object):
 
     def remove_task(self, description):
         if description not in self.tasks.fixed and description not in self.tasks.assignments:
-            raise ScheduleFailure(title="Invalid Task", msg="There was no task found matching that description!")
+            raise ScheduleFailure(title="Invalid Task", msg="There was no assignment or task found matching that description!")
         def modification():
             self.tasks.remove(description)
         def failure(): #this can't fail as there are less things in the schedule
@@ -80,7 +80,7 @@ class Planner(object):
         if hours < 1:
             raise ScheduleFailure(title="Invalid Hours", msg="Hours completed must be at least 1.")
         if description not in self.tasks.assignments:
-            raise ScheduleFailure(title="Invalid Task", msg="There was no task found matching that description!")
+            raise ScheduleFailure(title="Invalid Task", msg="There was no assignment found matching that description!")
         def modification():
             self.tasks.add_hours(description, hours)
         def failure():
