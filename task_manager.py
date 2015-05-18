@@ -212,7 +212,7 @@ class TaskManager(object):
                 assignments_new.append((task, task.hours - task.hours_done))
         assignments = assignments_new
         #are we handling work_today right here?
-        for day in range(max_days_needed):
+        for day in range(start_offset, max_days_needed):
             today_day_of_week = datetime.date.weekday(self.today)
             day_of_week = (today_day_of_week + day) % 7
             if day_of_week not in work_days:

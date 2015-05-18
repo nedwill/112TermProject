@@ -112,7 +112,7 @@ class Planner(object):
         def modification():
             self.work_today = not self.work_today
         failure = modification
-        err_msg = "You can't finish your tasks if you toggle that day!"
+        err_msg = "You can't finish your tasks if you toggle today!"
         self._attempt_to_schedule(modification, failure, err_msg)
 
     def reschedule_task(self, task, date):
