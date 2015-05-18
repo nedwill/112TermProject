@@ -1,4 +1,5 @@
-from tasks import TaskList, FixedTask, Task
+from tasks import FixedTask, Task
+from task_manager import TaskManager
 import datetime
 
 class ScheduleFailure(Exception):
@@ -9,7 +10,7 @@ class ScheduleFailure(Exception):
 class Planner(object):
     def __init__(self, tasks=None, max_hours=8):
         if tasks is None:
-            self.tasks = TaskList()
+            self.tasks = TaskManager()
         else:
             self.tasks = tasks
         self.work_today = True

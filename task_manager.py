@@ -175,8 +175,28 @@ class TaskManager(object):
                 day_tasks, assignments_new = self._add_one_assignments(assignments, day_tasks, max_hours)
         return day_tasks, assignments_new
 
+    def _fill_day_trivially(self, day_tasks, assignments, start_day, max_hours, max_days):
+        day_tasks, assignments_new = self._init_schedule_evenly(assignments, day_tasks, max_hours, start_day)
+        assignments_new = []
+        for task, hours_remaining in assignments:
+            hours_used = self._plan_hours_day(day_tasks)
+            days_remaining = (task.due - start_day).days
+            if days_remaining <= 0:
+                raise NotEnoughTime
+            if hours_used < max_hours:
+                hours_per_day = hours_remaining # don't divide evenly
+                hours_per_day = min(hours_per_day, max_hours - hours_used) #don't do too many hours
+                if hours_remaining - hours_per_day > 0:
+                    assignments_new.append((task, hours_remaining - hours_per_day))
+                day_tasks = self._update_day_tasks(day_tasks, task, hours_per_day)
+            else:
+                if days_remaining == 0 and hours_remaining > 0:
+                    raise NotEnoughTime #does this ever happen?
+                assignments_new.append((task, hours_remaining))
+        return day_tasks, assignments_new
+
     def _calc_agenda_assignments(self, assignments, work_today,
-        work_days, max_days, max_hours, plan_tasks):
+        work_days, max_days, max_hours, plan_tasks, trivial):
         if len(assignments) == 0 or plan_tasks is None:
             return plan_tasks
         start_offset = 0 if work_today else 1
@@ -199,8 +219,12 @@ class TaskManager(object):
                 continue
             start_day = self.today + datetime.timedelta(day)
             try:
-                plan_tasks[day], assignments = self._fill_day_assignments(plan_tasks[day],
-                    assignments, start_day, max_hours, max_days)
+                if trivial:
+                    plan_tasks[day], assignments = self._fill_day_trivially(plan_tasks[day],
+                        assignments, start_day, max_hours, max_days)
+                else:
+                    plan_tasks[day], assignments = self._fill_day_assignments(plan_tasks[day],
+                        assignments, start_day, max_hours, max_days)
             except NotEnoughTime:
                 return None
         #if we couldn't plan out every assignment
@@ -208,7 +232,7 @@ class TaskManager(object):
             return None
         return plan_tasks
 
-    def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True):
+    def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True, trivial=False):
         """
         max_days maximizes work in given time at expense of easy/time efficiency
         """
@@ -222,5 +246,5 @@ class TaskManager(object):
         plan_tasks = [[] for _ in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self._calc_agenda_fixed(max_hours, plan_tasks)
         plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today,
-            work_days, max_days, max_hours, plan_tasks)
+            work_days, max_days, max_hours, plan_tasks, trivial)
         return plan_tasks
