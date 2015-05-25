@@ -120,7 +120,7 @@ class Planner(object):
             raise ScheduleFailure(msg="You can't reschedule a recurring task!")
         if date < datetime.date.today():
             raise ScheduleFailure(msg="You can't reschedule that task to the past!")
-        if date > self.planner.tasks.latest_task:
+        if date > self.tasks.latest_task:
             self.tasks.latest_task = date
 
         originaldue = task.due
@@ -132,14 +132,13 @@ class Planner(object):
         self._attempt_to_schedule(modification, failure, err_msg)
 
     def set_max_hours(self, new_max_hours):
-        original = self.planner.max_hours
         if new_max_hours > 24 or new_max_hours < 0:
             raise ScheduleFailure(title="Invalid Input", msg="Please enter an integer 0-24.")
-        
+        original = self.max_hours
         def modification():
-            self.planner.max_hours = new_max_hours
+            self.max_hours = new_max_hours
         def failure():
-            self.planner.max_hours = original
+            self.max_hours = original
         err_msg = "You can't finish your tasks in the given work hours per day!"
 
         self._attempt_to_schedule(modification, failure, err_msg)
