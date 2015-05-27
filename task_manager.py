@@ -1,9 +1,6 @@
 import datetime
 from tasks import FixedTask, Task
-from bucket_scheduler import bucket_scheduler, grow_buckets
-
-class NotEnoughTime(Exception):
-    pass
+from bucket_scheduler import bucket_scheduler, grow_buckets, NotEnoughTime
 
 class TaskManager(object):
     def __init__(self):
@@ -99,10 +96,17 @@ class TaskManager(object):
                 plan_tasks[day_of_week][0] = 0
 
         #format tasks in bucket_scheduler way
-        tasks = [(task.description, task.hours-task.hours_done, (task.due - self.today).days) for task in assignments]
+        tasks = []
+        for task in assignments:
+            if task.due > self.today:
+                tasks.append((task.description, task.hours-task.hours_done, (task.due - self.today).days))
         
         #get the schedule
-        plan_tasks = bucket_scheduler(plan_tasks, tasks)
+        try:
+            plan_tasks = bucket_scheduler(plan_tasks, tasks)
+        except NotEnoughTime:
+            return None
+
         if max_days:
             plan_tasks = grow_buckets(plan_tasks, tasks)
 
@@ -110,6 +114,8 @@ class TaskManager(object):
 
     def _format_for_app(self, plan_tasks):
         "should be list of (task, hours)"
+        if plan_tasks is None:
+            return None
         new_plan_tasks = []
         for _hours_remaining, plan_dict in plan_tasks:
             #plan_dict is description -> hours
