@@ -1,8 +1,9 @@
-from hypothesis import given, Settings, example
+from hypothesis import given, example
 from hypothesis.strategies import integers, booleans, lists, tuples
 import datetime
 from tasks import InvalidTask, FixedTask
 from planner import Planner
+from bucket_scheduler import NotEnoughTime
 
 year = integers(2015, 2016)
 month = integers(6, 12)
@@ -27,7 +28,7 @@ real_tomorrow = real_today + datetime.timedelta(1)
 real_dayafter = real_today + datetime.timedelta(2)
 
 @given(lists(tuples(recurring, tuples(year, month, day, hour), hour)), lists(tuples(hours, hours,
-    tuples(year, month, day))), hour, booleans(), settings=Settings(max_examples=10000))
+    tuples(year, month, day))), hour, booleans())
 @example([(0, (real_tomorrow.year, real_tomorrow.month, real_tomorrow.day, 10), 18)],
     [(8, 0, (real_dayafter.year, real_dayafter.month, real_dayafter.day))], 8, False)
 def test_calcagenda(fixed_l, l, max_hours, max_days):
@@ -53,9 +54,10 @@ def test_calcagenda(fixed_l, l, max_hours, max_days):
             return
         except InvalidTask:
             return
-    agenda = planner.create_agenda_safe()
-    trivial_agenda = planner.create_agenda_trivial()
-    assert (trivial_agenda is None) is (agenda is None)
+    try:
+        agenda = planner.create_agenda_safe()
+    except NotEnoughTime:
+        return
     if agenda is not None:
         scheduled_hours = 0
         today = datetime.date.today()
@@ -63,7 +65,8 @@ def test_calcagenda(fixed_l, l, max_hours, max_days):
         total_hours += sum(x[3] - x[2][3] for x in fixed_l)
         for i,day in enumerate(agenda):
             this_day_hours = 0
-            for task, hours in day:
+            for name, hours in day[1].iteritems():
+                task = planner.tasks.get_task(name)
                 if isinstance(task, FixedTask):
                     assert task.due >= (today + datetime.timedelta(i))
                 else:

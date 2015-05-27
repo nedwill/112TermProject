@@ -38,11 +38,7 @@ class Planner(object):
         self.current_agenda = agenda
 
     def create_agenda_safe(self):
-        return self.tasks.calc_agenda(self.max_hours, self.max_days, self.workDays, self.work_today, trivial=False)
-
-    def create_agenda_trivial(self):
-        "for testing"
-        return self.tasks.calc_agenda(self.max_hours, self.max_days, self.workDays, self.work_today, trivial=True)
+        return self.tasks.calc_agenda(self.max_hours, self.max_days, self.workDays, self.work_today)
 
     def createAgenda(self):
         self.current_agenda = self.create_agenda_safe()
