@@ -4,6 +4,11 @@ tasks are (name, hours_remaining, last_bucket_num)
 tasks can only be placed into buckets < last_bucket_num
 """
 
+import time
+
+class NotEnoughTime(Exception):
+	pass
+
 def get_task_set(buckets):
 	s = set()
 	for _hours, future_d in buckets:
@@ -21,9 +26,12 @@ def get_non_max_set(d):
 def grow(buckets, name):
 	pass #given a bucket, add an hour for that name and subtract for the last occurence of it
 
+def sort_tasks(tasks):
+	return sorted(tasks, key=lambda x: x[2])
+
 #for maximizing a given day
-def grow_buckets(buckets, tasks_sorted):
-	print buckets
+def grow_buckets(buckets, tasks):
+	tasks_sorted = sort_tasks(tasks)
 	while True:
 		if all(x[0] == 0 for x in buckets): #all buckets full
 			break
@@ -62,19 +70,30 @@ def grow_buckets(buckets, tasks_sorted):
 	print unfinished_tasks
 
 def bucket_scheduler(buckets, tasks):
-	tasks_sorted = sorted(tasks, key=lambda x: x[2])
+	start = time.time()
+	if any(x[2] > len(buckets) for x in tasks):
+		raise Exception("Not enough buckets!")
+	if any(x[2] <= 0 for x in tasks):
+		raise Exception("Invalid last bucket number!")
+	if sum(task[1] for task in tasks) > sum(bucket[0] for bucket in buckets):
+		raise Exception("Not enough time!")
+	tasks_sorted = sort_tasks(tasks)
 	for name, hours_remaining, last_bucket_num in tasks_sorted:
 		while hours_remaining > 0:
-			if all(bucket_hours == 0 for bucket_hours in buckets[:last_bucket_num]):
-				raise Exception("Schedule failure!")
+			if time.time() > start + 2:
+				raise Exception("Timeout")
+			hours_average = max(1, hours_remaining / last_bucket_num)
+			if all(bucket[0] <= 0 for bucket in buckets[:last_bucket_num]):
+				raise NotEnoughTime
 			for i, (bucket_hours_available, d) in enumerate(buckets[:last_bucket_num]):
+				hours_to_add = min(hours_average, bucket_hours_available)
 				if bucket_hours_available > 0:
-					buckets[i] = (bucket_hours_available-1, d)
-					hours_remaining -= 1
+					buckets[i] = (bucket_hours_available-hours_to_add, d)
+					hours_remaining -= hours_to_add
 					if name in d:
-						d[name] += 1
+						d[name] += hours_to_add
 					else:
-						d[name] = 1
+						d[name] = hours_to_add
 				if hours_remaining == 0:
 					break
 	return buckets
