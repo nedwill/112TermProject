@@ -80,6 +80,12 @@ def grow_buckets(buckets, tasks):
 	return buckets
 
 def bucket_scheduler(buckets, tasks):
+	"""
+	buckets = [(8, {"fixed 3h task": 3}), (0, {}), (8, {})]
+	tasks = [("test1", 4, 2), ("test2", 4, 3)]
+	Those are sample inputs. This is the heart of the application,
+	where tasks are scheduled.
+	"""
 	start = time.time()
 	if any(x[2] > len(buckets) for x in tasks):
 		raise Exception("Not enough buckets!")
