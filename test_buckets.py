@@ -19,17 +19,17 @@ def test_bucket_scheduler(buckets, tasks):
 	"TODO: improve checking for time availability"
 	assume(all(task[1] <= len(buckets) for task in tasks))
 	assume(all(task[1] > 0 for task in tasks))
+	assume(all(bucket >= 0 for bucket in buckets)) #for faster testing
 	assume(sum(task[0] for task in tasks) <= sum(bucket for bucket in buckets))
-	print buckets,tasks
 	fixed_buckets = [(x, {}) for x in buckets]
 	fixed_tasks = []
 	for i, (x, y) in enumerate(tasks):
 		fixed_tasks.append((str(i), x, y))
-	#print fixed_buckets, fixed_tasks
 	try:
-		bucket_scheduler(fixed_buckets, fixed_tasks)
+		buckets = bucket_scheduler(fixed_buckets, fixed_tasks)
+		grow_buckets(buckets, fixed_tasks)
 	except NotEnoughTime:
 		pass
 
-test_bucket_scheduler_dev()
-#test_bucket_scheduler()
+#test_bucket_scheduler_dev()
+test_bucket_scheduler()
