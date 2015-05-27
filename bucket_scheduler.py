@@ -79,7 +79,7 @@ def bucket_scheduler(buckets, tasks):
 	if any(x[2] <= 0 for x in tasks):
 		raise Exception("Invalid last bucket number!")
 	if sum(task[1] for task in tasks) > sum(bucket[0] for bucket in buckets):
-		raise Exception("Not enough time!")
+		raise NotEnoughTime
 	tasks_sorted = sort_tasks(tasks)
 	for name, hours_remaining, last_bucket_num in tasks_sorted:
 		while hours_remaining > 0:
