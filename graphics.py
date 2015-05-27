@@ -60,10 +60,11 @@ class Agenda(GraphicsElement):
         self.add(self.canvas.create_text(self.right,self.top,text="Due Date",
             font=SMALLFONT,anchor=NE))
 
-    def draw(self, selected_agenda, due_date_dict):
+    def draw(self, selectedAgenda):
         self.clear()
-        for i, item in enumerate(selected_agenda[1].items()):
-            tempDescription = item[0]
+        for i in xrange(len(selectedAgenda)):
+            item = selectedAgenda[i]
+            tempDescription = str(item[0])
             if len(tempDescription) > 15:
                 tempDescription = tempDescription[:14] + "..."
             newTop = self.top + 20*(i+1)
@@ -74,8 +75,10 @@ class Agenda(GraphicsElement):
             left = self.left + 4
             self.add(self.canvas.create_text(left,newTop,
                 text=tempDescription,font=FONT12,anchor=NW))
-            self.add(self.canvas.create_text(left + ((self.right - self.left) / 2), newTop, text=item[1], font=FONT12, anchor=N))
-            self.add(self.canvas.create_text(self.right, newTop, text=due_date_dict[item[0]], font=FONT12, anchor=NE))
+            self.add(self.canvas.create_text(left + ((self.right - self.left) / 2),newTop,text=item[1],
+             font=FONT12,anchor=N))
+            self.add(self.canvas.create_text(self.right,newTop,
+                text=item[0].due,font=FONT12,anchor=NE))
 
 class gCalendar(GraphicsElement): #draw calendar with given specs
     def __init__(self,canvas,width,height,month,year):
@@ -126,17 +129,18 @@ class gCalendar(GraphicsElement): #draw calendar with given specs
         (newLeft, newRight, newTop, newBottom) = self._get_coordinates(row, col)
         selected_agenda = planner.getAgenda(row, col)
         if selected_agenda is not None:
-            for i, description in enumerate(selected_agenda[1]):
+            for i, item in enumerate(selected_agenda):
                 #lots of hardcoded values here... bad
                 newTop2 = newTop + 15*(i+1)
+                tempDescription = item[0].description
                 if newTop2 + 30 > newBottom:
                     self.add(self.canvas.create_text(newLeft+4,
                         newTop2,text="......",font=FONT12,anchor=NW))
                     break
-                if len(description) > 15:
-                    description = description[:11] + "..." + description[-3:]
+                if len(tempDescription) > 15:
+                    tempDescription = tempDescription[:11] + "..." + tempDescription[-3:]
                 self.add(self.canvas.create_text(newLeft+4,newTop2,
-                    text=description,font=FONT12,
+                    text=tempDescription,font=FONT12,
                     anchor=NW))
 
     def _process_row_col(self, planner, row, col):

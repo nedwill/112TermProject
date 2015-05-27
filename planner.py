@@ -19,9 +19,6 @@ class Planner(object):
         self.max_days = max_days
         self.debug = debug
 
-    def get_due_dict(self):
-        return self.tasks.get_due_dict()
-
     def _attempt_to_schedule(self, modification=None, failure=None, err_msg="Unknown scheduling error."):
         if self.debug:
             modification()
