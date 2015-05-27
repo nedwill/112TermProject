@@ -12,7 +12,7 @@ def test_bucket_scheduler_dev():
 	buckets = [(8, {}), (0, {}), (8, {})]
 	tasks = [("test1", 4, 2), ("test2", 4, 3)]
 	buckets = bucket_scheduler(buckets, tasks)
-	grow_buckets(buckets, tasks)
+	print grow_buckets(buckets, tasks)
 
 @given(lists(integers()), lists(tuples(integers(), integers())))
 def test_bucket_scheduler(buckets, tasks):

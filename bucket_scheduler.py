@@ -14,19 +14,22 @@ def get_task_set(buckets):
 	for _hours, future_d in buckets:
 		for name in future_d:
 			s.add(name)
+	return s
 
 def get_non_max_set(d):
 	m = max(d.values())
-	non_max = {}
+	non_max = set()
 	for k, v in d.iteritems():
 		if v != m:
 			non_max.add(k)
 	return non_max
 
 def grow(buckets, name):
-	pass #given a bucket, add an hour for that name and subtract for the last occurence of it
+	"given a bucket, add an hour for that name and subtract for the last occurence of it"
+	pass
 
 def sort_tasks(tasks):
+	"sort tasks in order of due date"
 	return sorted(tasks, key=lambda x: x[2])
 
 #for maximizing a given day
@@ -64,8 +67,10 @@ def grow_buckets(buckets, tasks):
 							del d_take[to_update]
 						else:
 							d_take[to_update] -= 1
-					buckets[j] = (hours_available_take+1, d_take)
+						buckets[j] = (hours_available_take+1, d_take)
+						break
 				break
+	return buckets
 
 	#given all unfinished tasks, add hours in order of earliest due if we won't break the max
 	#given unfinished tasks and non-max tasks, take intersection and inc the earliest
