@@ -126,7 +126,7 @@ class Controller(object):
         row = (event.y - top) / cellHeight
         selectedAgenda = self.selectAgenda(row, col)
         if selectedAgenda is not None:
-            self.agenda.draw(selectedAgenda)
+            self.agenda.draw(selectedAgenda, self.planner.get_due_dict())
             self.week = row
             self.day = col
         elif row >= 0 and col >= 0 and row < self.cal.weeks and col < 7:
@@ -410,7 +410,7 @@ class Controller(object):
     # call failure if we can't schedule
     def _refresh_ui(self):
         self.selectAgenda(self.week, self.day)
-        self.agenda.draw(self.selectedAgenda)
+        self.agenda.draw(self.selectedAgenda, self.planner.get_due_dict())
         self.cal.draw(self)
         self.saveData()
 

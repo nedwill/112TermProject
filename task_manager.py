@@ -12,6 +12,15 @@ class TaskManager(object):
         self.latest_task = datetime.date.today() #initialize last task date to today
         self.today = datetime.date.today()
 
+    def get_due_dict(self):
+        d = {}
+        for k, v in self.assignments.iteritems():
+            d[k] = v.due
+        for k, v in self.fixed.iteritems():
+            assert k not in d
+            d[k] = v.due
+        return d
+
     def add(self, task):
         if isinstance(task, FixedTask):
             if task.description in self.fixed:
