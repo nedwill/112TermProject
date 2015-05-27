@@ -108,6 +108,15 @@ class TaskManager(object):
 
         return plan_tasks
 
+    def _format_for_app(self, plan_tasks):
+        "should be list of (task, hours)"
+        new_plan_tasks = []
+        for _hours_remaining, plan_dict in plan_tasks:
+            #plan_dict is description -> hours
+            plan_dict_list = [(self.get_task(x), y) for (x, y) in plan_dict.items()]
+            new_plan_tasks.append(list(sorted(plan_dict_list, key=lambda x: x[0].due)))
+        return new_plan_tasks
+
     def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True):
         """
         max_days maximizes work in given time at expense of easy/time efficiency
@@ -123,6 +132,6 @@ class TaskManager(object):
         #those lists are mutable tuples... maybe that should be fixed for cleanliness
         plan_tasks = [[max_hours, {}] for _ in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self._calc_agenda_fixed(plan_tasks)
-        plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today,
-            work_days, max_days, plan_tasks)
+        plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today, work_days, max_days, plan_tasks)
+        plan_tasks = self._format_for_app(plan_tasks) #change format of output data
         return plan_tasks
