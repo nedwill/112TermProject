@@ -31,11 +31,14 @@ def sort_tasks(tasks):
 
 #for maximizing a given day
 def grow_buckets(buckets, tasks):
+	start = time.time()
 	tasks_sorted = sort_tasks(tasks)
 	while True:
 		if all(x[0] == 0 for x in buckets): #all buckets full
 			break
 		for i, (hours_available, d) in enumerate(buckets):
+			if time.time() > start + 2:
+				raise Exception("Timeout")
 			if hours_available > 0:
 				unfinished_tasks = get_task_set(buckets[i+1:])
 				if len(unfinished_tasks) == 0:

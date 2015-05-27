@@ -31,5 +31,5 @@ def test_bucket_scheduler(buckets, tasks):
 	except NotEnoughTime:
 		pass
 
-#test_bucket_scheduler_dev()
-test_bucket_scheduler()
+test_bucket_scheduler_dev()
+#test_bucket_scheduler()
