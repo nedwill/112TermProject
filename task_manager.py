@@ -65,6 +65,7 @@ class TaskManager(object):
                 raise NotEnoughTime
             assert newtask.description not in plan_tasks[i][1]
             plan_tasks[i][1][newtask.description] = newtask.hours
+        return plan_tasks
 
     def _calc_agenda_fixed(self, plan_tasks):
         assert plan_tasks is not None
