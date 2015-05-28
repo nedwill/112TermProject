@@ -4,7 +4,7 @@ from hypothesis.strategies import integers, text, tuples, just, sampled_from
 from hypothesis.extra.datetime import datetimes
 from planner import Planner
 import unittest
-from custom_exceptions import NotEnoughTime, InvalidTask
+from custom_exceptions import NotEnoughTime, InvalidTask, ScheduleFailure
 import datetime
 
 def test_set_max_hours():
@@ -47,17 +47,14 @@ class PlannerMachine(GenericStateMachine):
 			assert self.planner.get_task(name) is None
 			try:
 				self.planner.add_task(name, hours, hours_done, due)
+			except InvalidTask:
+				return
 			except NotEnoughTime:
+				return
+			except ScheduleFailure:
 				return
 			self.task_names.add(name)
 			assert self.planner.get_task(name) is not None
-		elif action == "delete_task":
-			name = data[0]
-			assert name in self.task_names
-			assert self.planner.get_task(name) is not None
-			self.planner.remove_task(name)
-			self.task_names.remove(name)
-			assert self.planner.get_task(name) is None
 		elif action == "add_fixed_task":
 			name = data[0]
 			if name in self.task_names:
@@ -69,8 +66,17 @@ class PlannerMachine(GenericStateMachine):
 				return
 			except NotEnoughTime:
 				return
+			except ScheduleFailure:
+				return
 			self.task_names.add(name)
 			assert self.planner.get_task(name) is not None
+		elif action == "delete_task":
+			name = data[0]
+			assert name in self.task_names
+			assert self.planner.get_task(name) is not None
+			self.planner.remove_task(name)
+			self.task_names.remove(name)
+			assert self.planner.get_task(name) is None
 		elif action == "add_hours":
 			name = data[0]
 			assert name in self.task_names
@@ -78,11 +84,21 @@ class PlannerMachine(GenericStateMachine):
 		elif action == "toggle_work_day":
 			self.planner.toggle_work_day(*data)
 		elif action == "reschedule_task":
-			self.planner.reschedule_task(*data)
+			name, date = data
+			try:
+				self.planner.reschedule_task(name, date.date())
+			except ScheduleFailure:
+				return
 		elif action == "set_max_hours":
-			self.planner.set_max_hours(*data)
+			try:
+				self.planner.set_max_hours(*data)
+			except ScheduleFailure:
+				return
 		elif action == "toggle_max_days":
-			self.planner.toggle_max_days()
+			try:
+				self.planner.toggle_max_days()
+			except ScheduleFailure:
+				return
 		#try to make schedule after doing action?
 		#catch it trying to make the new schedule and don't include the new task if it fails
 
@@ -92,4 +108,3 @@ if __name__ == '__main__':
 	test_set_max_hours()
 	test_add_task()
 	unittest.main()
-
