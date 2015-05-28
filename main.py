@@ -223,6 +223,7 @@ class Controller(object):
             due = datetime.date(year, month, day)
         except:
             tkMessageBox.showerror("Date Entry Error", "Invalid Date Entered!")
+            return
         if due < datetime.date.today():
             tkMessageBox.showerror("Date Entry Error", "You can't add something in the past!")
             return
