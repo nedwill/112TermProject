@@ -78,7 +78,7 @@ class Planner(object):
         def modification():
             self.tasks.remove(description)
         def failure(): #this can't fail as there are less things in the schedule
-            pass
+            assert False
         self._attempt_to_schedule(modification, failure)
 
     def add_hours(self, description, hours):
@@ -89,7 +89,7 @@ class Planner(object):
         def modification():
             self.tasks.add_hours(description, hours)
         def failure():
-            pass #cannot cause failure by adding hours
+            assert False #cannot cause failure by adding hours
         self._attempt_to_schedule(modification, failure)
 
     def get_task(self, name):
