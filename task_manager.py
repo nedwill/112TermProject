@@ -62,7 +62,9 @@ class TaskManager(object):
             #making a new task here might be wrong... we can design this better
             newtask = FixedTask(task.description, startTime, endTime, True)
             if newtask.hours > plan_tasks[i][0]:
-                raise NotEnoughTime
+                plan_tasks[i][0] = 0
+            else:
+                plan_tasks[i][0] -= newtask.hours
             assert newtask.description not in plan_tasks[i][1]
             plan_tasks[i][1][newtask.description] = newtask.hours
         return plan_tasks
@@ -77,8 +79,9 @@ class TaskManager(object):
                 return self._calc_agenda_recurring(days_away, task, plan_tasks)
             #plan_tasks[days_away] is (hours_remaining, {name: hours_scheduled})
             if task.hours > plan_tasks[days_away][0]:
-                raise NotEnoughTime
-            plan_tasks[days_away][0] -= task.hours
+                plan_tasks[days_away][0] = 0
+            else:
+                plan_tasks[days_away][0] -= task.hours
             assert plan_tasks[days_away][0] >= 0 #should have checked this already
             assert task.description not in plan_tasks[days_away][1] #why would it already be in there?
             plan_tasks[days_away][1][task.description] = task.hours
