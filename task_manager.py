@@ -1,7 +1,7 @@
 import datetime
 from tasks import FixedTask, Task
 from bucket_scheduler import bucket_scheduler, grow_buckets
-from custom_exceptions import NotEnoughTime
+from custom_exceptions import NotEnoughTime, TaskAlreadyExists
 
 class TaskManager(object):
     def __init__(self):
@@ -12,7 +12,7 @@ class TaskManager(object):
 
     def add(self, task):
         if task.description in set.union(set(self.fixed), set(self.assignments)):
-            return
+            raise TaskAlreadyExists
         if isinstance(task, FixedTask):
             self.fixed[task.description] = task
         elif isinstance(task, Task):
