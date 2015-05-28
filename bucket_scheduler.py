@@ -32,49 +32,74 @@ def sort_tasks(tasks):
 	"sort tasks in order of due date"
 	return sorted(tasks, key=lambda x: x[2])
 
+def get_to_update(tasks_sorted, inc_set):
+	for name, _, _ in tasks_sorted:
+		if name in inc_set:
+			return name
+	return None
+
+def get_bucket_to_update(buckets):
+	for i, (hours_available, d) in enumerate(buckets):
+		if hours_available > 0:
+			return (i, hours_available, d)
+	return None
+
+def get_inc_set(non_max_set, unfinished_tasks):
+	if len(non_max_set) == 0:
+		return unfinished_tasks
+	inc_set = set.intersection(unfinished_tasks, non_max_set)
+	if len(inc_set) == 0:
+		inc_set = unfinished_tasks
+	assert len(inc_set) > 0
+	return inc_set
+
 #for maximizing a given day
 def grow_buckets(buckets, tasks):
 	start = time.time()
 	tasks_sorted = sort_tasks(tasks)
 	while True:
-		if all(x[0] == 0 for x in buckets): #all buckets full
+		if time.time() > start + 2:
+			raise Exception("Timeout")
+
+		bucket_to_update = get_bucket_to_update(buckets)
+		if bucket_to_update is None:
 			break
-		for i, (hours_available, d) in enumerate(buckets):
-			if time.time() > start + 2:
-				raise Exception("Timeout")
-			if hours_available > 0:
-				unfinished_task_dict = get_task_dict(buckets[i+1:], tasks)
-				if len(unfinished_task_dict) == 0:
-					return buckets
-				unfinished_tasks = set(unfinished_task_dict)
-				non_max_set = get_non_max_set(d)
-				if len(non_max_set) == 0:
-					inc_set = unfinished_tasks
+		i, hours_available, d = bucket_to_update
+
+		#this is inefficient... n^2
+		unfinished_task_dict = get_task_dict(buckets[i+1:], tasks)
+
+		if len(unfinished_task_dict) == 0:
+			return buckets
+
+		unfinished_tasks = set(unfinished_task_dict)
+
+		non_max_set = get_non_max_set(d)
+
+		inc_set = get_inc_set(non_max_set, unfinished_tasks)
+		
+		to_update = get_to_update(tasks_sorted, inc_set)
+		assert to_update is not None
+
+		hours_to_add = min(unfinished_task_dict[to_update], hours_available)
+		
+		if to_update in d:
+			d[to_update] += hours_to_add
+		else:
+			d[to_update] = hours_to_add
+		
+		buckets[i] = (hours_available-hours_to_add, d)
+		for j in range(len(buckets)-1, -1, -1):
+			(hours_available_take, d_take) = buckets[j]
+			if to_update in d_take:
+				if d_take[to_update] == hours_to_add:
+					del d_take[to_update]
 				else:
-					inc_set = set.intersection(unfinished_tasks, non_max_set)
-					if len(inc_set) == 0:
-						inc_set = unfinished_tasks
-				for name, _, _ in tasks_sorted:
-					if name in inc_set:
-						to_update = name
-						break
-				hours_to_add = min(unfinished_task_dict[to_update], hours_available)
-				if to_update in d:
-					d[to_update] += hours_to_add
-				else:
-					d[to_update] = hours_to_add
-				buckets[i] = (hours_available-hours_to_add, d)
-				for j in range(len(buckets)-1, -1, -1):
-					(hours_available_take, d_take) = buckets[j]
-					if to_update in d_take:
-						if d_take[to_update] == hours_to_add:
-							del d_take[to_update]
-						else:
-							assert d_take[to_update] > hours_to_add
-							d_take[to_update] -= hours_to_add
-						buckets[j] = (hours_available_take+hours_to_add, d_take)
-						break
+					assert d_take[to_update] > hours_to_add
+					d_take[to_update] -= hours_to_add
+				buckets[j] = (hours_available_take+hours_to_add, d_take)
 				break
+
 	return buckets
 
 def bucket_scheduler(buckets, tasks):
