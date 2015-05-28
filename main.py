@@ -10,7 +10,8 @@ import os
 import pickle
 from Tkinter import Tk, FALSE, Canvas, Button
 from graphics import gCalendar, Agenda, MEDIUMFONT, BIGFONT
-from planner import Planner, ScheduleFailure
+from planner import Planner
+from custom_exceptions import ScheduleFailure, TaskAlreadyExists
 
 SAVEFILE = "schedule.dat"
 
@@ -421,6 +422,8 @@ class Controller(object):
             self._refresh_ui()
         except ScheduleFailure as e:
             self._schedule_fail_window(e.title, e.msg)
+        except TaskAlreadyExists:
+            self._schedule_fail_window("Error", "Task Already Exists!")
 
     def toggleWorkDay(self):
         dayint = tkSimpleDialog.askinteger("Workday Toggler", "Which day do you want to toggle?")
