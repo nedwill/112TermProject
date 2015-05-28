@@ -5,9 +5,7 @@ tasks can only be placed into buckets < last_bucket_num
 """
 
 import time
-
-class NotEnoughTime(Exception):
-	pass
+from custom_exceptions import NotEnoughTime
 
 def get_task_dict(buckets, tasks):
 	"the amount of hours from the last day a task is available"
