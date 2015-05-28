@@ -83,6 +83,9 @@ class Planner(object):
             pass #cannot cause failure by adding hours
         self._attempt_to_schedule(modification, failure)
 
+    def get_task(self, name):
+        return self.tasks.get_task(name)
+
     def get_latest_task(self):
         return self.tasks.latest_task
 
