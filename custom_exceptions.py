@@ -1,5 +1,5 @@
 class NotEnoughTime(Exception):
-	pass
+    pass
 
 class InvalidTask(Exception):
     pass
@@ -10,4 +10,4 @@ class ScheduleFailure(Exception):
         self.msg = msg
 
 class TaskAlreadyExists(Exception):
-	pass
+    pass
