@@ -11,13 +11,11 @@ class TaskManager(object):
         self.today = datetime.date.today()
 
     def add(self, task):
+        if task.description in set.union(set(self.fixed), set(self.assignments)):
+            return
         if isinstance(task, FixedTask):
-            if task.description in self.fixed:
-                return
             self.fixed[task.description] = task
         elif isinstance(task, Task):
-            if task.description in self.assignments:
-                return
             self.assignments[task.description] = task
         if task.due > self.latest_task: #due date > lastestTask
             self.latest_task = task.due
