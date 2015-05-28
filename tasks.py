@@ -10,9 +10,7 @@ class Task(object): #recurring attribute here?
     def __init__(self, description, hours, hours_done, due):
         if hours < hours_done or hours < 0 or hours_done < 0:
             raise InvalidTask
-        print due.year
         if due.year > MAX_YEAR:
-            print "task getting dropped"
             raise InvalidTask
         self.description = description
         self.hours = hours
