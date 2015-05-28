@@ -28,9 +28,9 @@ def test_bucket_scheduler(buckets, tasks):
 		fixed_tasks.append((str(i), x, y))
 	try:
 		buckets = bucket_scheduler(fixed_buckets, fixed_tasks)
-		grow_buckets(buckets, fixed_tasks)
 	except NotEnoughTime:
-		pass
+		return
+	grow_buckets(buckets, fixed_tasks)
 
 #test_bucket_scheduler_dev()
 test_bucket_scheduler()
