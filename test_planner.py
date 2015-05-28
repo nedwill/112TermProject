@@ -4,7 +4,7 @@ from hypothesis.strategies import integers, text, tuples, just, sampled_from
 from hypothesis.extra.datetime import datetimes
 from planner import Planner
 import unittest
-from custom_exceptions import NotEnoughTime, InvalidTask, ScheduleFailure
+from custom_exceptions import ScheduleFailure
 import datetime
 
 def test_set_max_hours():
@@ -15,6 +15,14 @@ def test_add_task():
 	planner = Planner()
 	data = (u'', 0, 0, datetime.date(2000, 1, 1))
 	planner.add_task(*data)
+
+def test_add_same_name():
+	"unicode bug"
+	machine = PlannerMachine()
+	steps = [('add_task', (u'', 8388608, 0, datetime.datetime(4455, 7, 13, 15, 55, 23, 881576))),
+		('add_fixed_task', (u'', datetime.datetime(2464, 9, 1, 22, 0, 6, 681778), datetime.datetime(8725, 7, 10, 16, 10, 0, 564361)))]
+	for step in steps:
+		machine.execute_step(step)
 
 class PlannerMachine(GenericStateMachine):
 	def __init__(self):
@@ -55,12 +63,13 @@ class PlannerMachine(GenericStateMachine):
 			name = data[0]
 			if name in self.task_names:
 				return
+			assert name not in self.task_names
 			assert self.planner.get_task(name) is None
 			try:
 				self.planner.add_fixed_task(*data)
 			except ScheduleFailure:
 				return
-			self.task_names.add(name)
+			self.task_names = self.task_names.add(name)
 			assert self.planner.get_task(name) is not None
 		elif action == "delete_task":
 			name = data[0]
@@ -92,7 +101,6 @@ class PlannerMachine(GenericStateMachine):
 			except ScheduleFailure:
 				return
 		else:
-			print "Unknown action", action
 			assert False
 		#try to make schedule after doing action?
 		#catch it trying to make the new schedule and don't include the new task if it fails
@@ -102,4 +110,5 @@ TestPlanner = PlannerMachine.TestCase
 if __name__ == '__main__':
 	test_set_max_hours()
 	test_add_task()
+	test_add_same_name()
 	unittest.main()

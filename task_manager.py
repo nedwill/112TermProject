@@ -1,7 +1,7 @@
 import datetime
 from tasks import FixedTask, Task
 from bucket_scheduler import bucket_scheduler, grow_buckets
-from custom_exceptions import NotEnoughTime, TaskAlreadyExists
+from custom_exceptions import TaskAlreadyExists
 
 class TaskManager(object):
     def __init__(self):
@@ -23,6 +23,7 @@ class TaskManager(object):
     #now removing goes by the exact string
     #we should have a function that does fuzzy matching
     def remove(self, description):
+        description = unicode(description) #super pernicious bug found with stateful testing
         if description in self.fixed:
             ret = self.fixed[description]
             del self.fixed[description]
