@@ -16,13 +16,27 @@ def test_add_task():
 	data = (u'', 0, 0, datetime.date(2000, 1, 1))
 	planner.add_task(*data)
 
-def test_add_same_name():
-	"unicode bug"
+def run_test(steps):
 	machine = PlannerMachine()
-	steps = [('add_task', (u'', 8388608, 0, datetime.datetime(4455, 7, 13, 15, 55, 23, 881576))),
-		('add_fixed_task', (u'', datetime.datetime(2464, 9, 1, 22, 0, 6, 681778), datetime.datetime(8725, 7, 10, 16, 10, 0, 564361)))]
 	for step in steps:
 		machine.execute_step(step)
+
+def test_add_same_name():
+	"unicode bug"
+	steps = [('add_task', (u'', 8388608, 0, datetime.datetime(4455, 7, 13, 15, 55, 23, 881576))),
+		('add_fixed_task', (u'', datetime.datetime(2464, 9, 1, 22, 0, 6, 681778), datetime.datetime(8725, 7, 10, 16, 10, 0, 564361)))]
+	run_test(steps)
+
+def test_timeout():
+	steps = [('toggle_max_days', (None,)),
+		('add_task', (u'', 69, 0, datetime.datetime(1265, 11, 27, 5, 15, 28, 137113))),
+		('reschedule_task', (u'', datetime.datetime(6098, 7, 10, 2, 0, 47, 447492)))]
+	run_test(steps)
+
+def test_toggle_workday():
+	steps = [('add_task', (u'', 0, 0, datetime.datetime(2000, 1, 1, 0, 0))),
+		('toggle_work_day', (3,))]
+	run_test(steps)
 
 class PlannerMachine(GenericStateMachine):
 	def __init__(self):
@@ -39,7 +53,7 @@ class PlannerMachine(GenericStateMachine):
 		if len(self.task_names) == 0:
 			return always_available
 		else:
-			add_hours_strategy = strategy(tuples(just("add_hours"), tuples(sampled_from(self.task_names), integers())))
+			add_hours_strategy = strategy(tuples(just("add_hours"), tuples(sampled_from(self.task_names), integers(min_value=1))))
 			toggle_work_day_strategy = strategy(tuples(just("toggle_work_day"), tuples(sampled_from(range(7)))))
 			reschedule_task_strategy = strategy(tuples(just("reschedule_task"), tuples(sampled_from(self.task_names), datetimes())))
 			delete_task_strategy = strategy(tuples(just("delete_task"), tuples(sampled_from(self.task_names))))
@@ -86,15 +100,19 @@ class PlannerMachine(GenericStateMachine):
 			self.planner.toggle_work_day(*data)
 		elif action == "reschedule_task":
 			name, date = data
+			task = self.planner.get_task(name)
 			try:
-				self.planner.reschedule_task(name, date.date())
+				self.planner.reschedule_task(task, date.date())
 			except ScheduleFailure:
 				return
 		elif action == "set_max_hours":
+			original_max_hours = self.planner.max_hours
 			try:
 				self.planner.set_max_hours(*data)
 			except ScheduleFailure:
+				assert self.planner.max_hours == original_max_hours
 				return
+			assert self.planner.max_hours == data[0]
 		elif action == "toggle_max_days":
 			try:
 				self.planner.toggle_max_days()
@@ -111,4 +129,6 @@ if __name__ == '__main__':
 	test_set_max_hours()
 	test_add_task()
 	test_add_same_name()
+	test_timeout()
+	test_toggle_workday()
 	unittest.main()
