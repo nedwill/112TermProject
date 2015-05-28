@@ -1,7 +1,7 @@
 from tasks import FixedTask, Task
 from task_manager import TaskManager
 import datetime
-from custom_exceptions import NotEnoughTime, ScheduleFailure
+from custom_exceptions import NotEnoughTime, ScheduleFailure, InvalidTask
 
 class Planner(object):
     def __init__(self, tasks=None, max_hours=8, max_days=False, debug=False):
@@ -34,6 +34,9 @@ class Planner(object):
         except NotEnoughTime:
             failure()
             raise ScheduleFailure(msg=err_msg)
+        except InvalidTask:
+            failure()
+            raise ScheduleFailure(msg=err_msg)
         self.current_agenda = agenda
 
     def create_agenda_safe(self):
@@ -50,8 +53,12 @@ class Planner(object):
         err_msg = "You can't finish that task in the given time per day!"
         self._attempt_to_schedule(modification, failure, err_msg)
 
+    #TODO: drop hoursDone from add_task. that should always init to 0
     def add_task(self, description, hours, hoursDone, due):
-        task = Task(description, hours, hoursDone, due)
+        try:
+            task = Task(description, hours, hoursDone, due)
+        except InvalidTask:
+            raise ScheduleFailure(title="Invalid Task", msg="The number of hours was invalid.")
         self._add_task_and_schedule(task)
 
     def add_fixed_task(self, description, startTime, endTime, recurring=None):
@@ -59,7 +66,10 @@ class Planner(object):
         if days > 0 or endTime.day != startTime.day:
             raise ScheduleFailure(title="Invalid Task",
                 msg="Your task cannot be longer than 24 hours or span multiple days.")
-        task = FixedTask(description, startTime, endTime, recurring)
+        try:
+            task = FixedTask(description, startTime, endTime, recurring)
+        except InvalidTask:
+            raise ScheduleFailure(title="Invalid Task", msg="End time must come after start time.")
         self._add_task_and_schedule(task)
 
     def remove_task(self, description):
