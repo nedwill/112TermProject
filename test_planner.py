@@ -41,16 +41,12 @@ class PlannerMachine(GenericStateMachine):
 		action, data = step
 		if action == "add_task":
 			(name, hours, hours_done, due) = data
-			due = due.date() #make a date, not a datetime...
 			if name in self.task_names:
 				return
+			due = due.date() #make a date, not a datetime...
 			assert self.planner.get_task(name) is None
 			try:
 				self.planner.add_task(name, hours, hours_done, due)
-			except InvalidTask:
-				return
-			except NotEnoughTime:
-				return
 			except ScheduleFailure:
 				return
 			self.task_names.add(name)
@@ -62,10 +58,6 @@ class PlannerMachine(GenericStateMachine):
 			assert self.planner.get_task(name) is None
 			try:
 				self.planner.add_fixed_task(*data)
-			except InvalidTask:
-				return
-			except NotEnoughTime:
-				return
 			except ScheduleFailure:
 				return
 			self.task_names.add(name)
@@ -99,6 +91,9 @@ class PlannerMachine(GenericStateMachine):
 				self.planner.toggle_max_days()
 			except ScheduleFailure:
 				return
+		else:
+			print "Unknown action", action
+			assert False
 		#try to make schedule after doing action?
 		#catch it trying to make the new schedule and don't include the new task if it fails
 
