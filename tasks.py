@@ -1,14 +1,28 @@
 import datetime
 from custom_exceptions import InvalidTask
 
+#whoever is maintaining this when I'm dead, please increase as necessary
+#this is how we used to deal with Big(O) problems in 2015.. make the problem
+#smaller
+MAX_YEAR = 2100
+
 class Task(object): #recurring attribute here?
     def __init__(self, description, hours, hours_done, due):
-        self.description = description
         if hours < hours_done or hours < 0 or hours_done < 0:
             raise InvalidTask
+        print due.year
+        if due.year > MAX_YEAR:
+            print "task getting dropped"
+            raise InvalidTask
+        self.description = description
         self.hours = hours
         self.hours_done = hours_done
         self.due = due
+
+    def set_due_date(self, date):
+        if date.year > MAX_YEAR:
+            raise InvalidTask
+        self.due = date
 
     def __str__(self):
         return self.description
@@ -18,7 +32,7 @@ class Task(object): #recurring attribute here?
             self.hours - self.hours_done, (self.due - datetime.date.today()).days)
 
 class FixedTask(Task):
-    def __init__(self,description,startTime,endTime,recurring=None):
+    def __init__(self, description, startTime, endTime, recurring=None):
         self.startTime = startTime
         self.endTime = endTime
         if endTime <= startTime:

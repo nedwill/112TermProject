@@ -27,8 +27,8 @@ class Planner(object):
         if failure is None:
             def failure():
                 pass
-        modification()
         try:
+            modification()
             agenda = self.create_agenda_safe()
             assert agenda is not None
         except NotEnoughTime:
@@ -133,9 +133,9 @@ class Planner(object):
 
         originaldue = task.due
         def modification():
-            task.due = date
+            task.set_due_date(date)
         def failure():
-            task.due = originaldue
+            task.set_due_date(originaldue)
         err_msg = "You can't finish that task in the given time per day!"
         self._attempt_to_schedule(modification, failure, err_msg)
 
