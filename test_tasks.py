@@ -65,8 +65,7 @@ def test_calcagenda(fixed_l, l, max_hours, max_days):
         total_hours += sum(x[3] - x[2][3] for x in fixed_l)
         for i,day in enumerate(agenda):
             this_day_hours = 0
-            for name, hours in day[1].iteritems():
-                task = planner.tasks.get_task(name)
+            for task, hours in day:
                 if isinstance(task, FixedTask):
                     assert task.due >= (today + datetime.timedelta(i))
                 else:
