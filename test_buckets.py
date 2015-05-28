@@ -1,6 +1,7 @@
 from hypothesis import given, assume
 from hypothesis.strategies import lists, integers, tuples
-from bucket_scheduler import bucket_scheduler, grow_buckets, NotEnoughTime
+from bucket_scheduler import bucket_scheduler, grow_buckets
+from custom_exceptions import NotEnoughTime
 
 #should schedule everything on first day
 def test_bucket_scheduler_constrained():
