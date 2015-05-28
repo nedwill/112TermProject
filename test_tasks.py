@@ -1,9 +1,9 @@
 from hypothesis import given, example
 from hypothesis.strategies import integers, booleans, lists, tuples
 import datetime
-from tasks import InvalidTask, FixedTask
+from tasks import FixedTask
 from planner import Planner
-from bucket_scheduler import NotEnoughTime
+from custom_exceptions import ScheduleFailure, NotEnoughTime
 
 year = integers(2015, 2016)
 month = integers(6, 12)
@@ -44,7 +44,7 @@ def test_calcagenda(fixed_l, l, max_hours, max_days):
             planner.add_fixed_task(name, datetime.datetime(*time1), datetime.datetime(*time2), recurring)
         except ValueError:
             return
-        except InvalidTask:
+        except ScheduleFailure:
             return
     l = [(str(name), hours, hours_done, due) for (name, (hours, hours_done, due)) in enumerate(l)]
     for name, hours, hours_done, due in l:
@@ -52,7 +52,7 @@ def test_calcagenda(fixed_l, l, max_hours, max_days):
             planner.add_task(name, hours, hours_done, datetime.date(*due))
         except ValueError:
             return
-        except InvalidTask:
+        except ScheduleFailure:
             return
     try:
         agenda = planner.create_agenda_safe()
