@@ -125,8 +125,6 @@ class TaskManager(object):
         """
         #TODO: arguments to this function should be part
         #of the tasklist __init__, not passed here
-        #if max_hours == 0:
-        #    raise NotEnoughTime
         if work_days is None:
             work_days = [0, 1, 2, 3, 4, 5, 6]
         max_days_needed = (self.latest_task - self.today).days+1
