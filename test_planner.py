@@ -4,6 +4,17 @@ from hypothesis.strategies import integers, text, tuples, just, sampled_from
 from hypothesis.extra.datetime import datetimes
 from planner import Planner
 import unittest
+from custom_exceptions import NotEnoughTime, InvalidTask
+import datetime
+
+def test_set_max_hours():
+	planner = Planner()
+	planner.set_max_hours(0)
+
+def test_add_task():
+	planner = Planner()
+	data = (u'', 0, 0, datetime.date(2000, 1, 1))
+	planner.add_task(*data)
 
 class PlannerMachine(GenericStateMachine):
 	def __init__(self):
@@ -14,7 +25,7 @@ class PlannerMachine(GenericStateMachine):
 		add_task_strategy = strategy(tuples(just("add_task"), tuples(text(), integers(), integers(), datetimes())))
 		#TODO: support recurring tasks
 		add_fixed_task_strategy = strategy(tuples(just("add_fixed_task"), tuples(text(), datetimes(), datetimes())))
-		set_max_hours_strategy = strategy(tuples(just("set_max_hours"), tuples(integers())))
+		set_max_hours_strategy = strategy(tuples(just("set_max_hours"), tuples(integers(min_value=0, max_value=24))))
 		toggle_max_days_strategy = strategy(tuples(just("toggle_max_days"), tuples(just(None)))) #just a toggle, filler here
 		always_available = add_task_strategy | add_fixed_task_strategy | set_max_hours_strategy | toggle_max_days_strategy
 		if len(self.task_names) == 0:
@@ -29,24 +40,36 @@ class PlannerMachine(GenericStateMachine):
 	def execute_step(self, step):
 		action, data = step
 		if action == "add_task":
-			name = data[0]
+			(name, hours, hours_done, due) = data
+			due = due.date() #make a date, not a datetime...
 			if name in self.task_names:
 				return
 			assert self.planner.get_task(name) is None
-			self.planner.add_task(*data)
+			try:
+				self.planner.add_task(name, hours, hours_done, due)
+			except NotEnoughTime:
+				return
+			self.task_names.add(name)
 			assert self.planner.get_task(name) is not None
 		elif action == "delete_task":
 			name = data[0]
 			assert name in self.task_names
 			assert self.planner.get_task(name) is not None
 			self.planner.remove_task(name)
+			self.task_names.remove(name)
 			assert self.planner.get_task(name) is None
 		elif action == "add_fixed_task":
 			name = data[0]
 			if name in self.task_names:
 				return
 			assert self.planner.get_task(name) is None
-			self.planner.add_fixed_task(name)
+			try:
+				self.planner.add_fixed_task(*data)
+			except InvalidTask:
+				return
+			except NotEnoughTime:
+				return
+			self.task_names.add(name)
 			assert self.planner.get_task(name) is not None
 		elif action == "add_hours":
 			name = data[0]
@@ -66,5 +89,7 @@ class PlannerMachine(GenericStateMachine):
 TestPlanner = PlannerMachine.TestCase
 
 if __name__ == '__main__':
+	test_set_max_hours()
+	test_add_task()
 	unittest.main()
 

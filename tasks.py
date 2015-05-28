@@ -1,7 +1,5 @@
 import datetime
-
-class InvalidTask(Exception):
-    pass
+from custom_exceptions import InvalidTask
 
 class Task(object): #recurring attribute here?
     def __init__(self, description, hours, hours_done, due):

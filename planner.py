@@ -1,6 +1,7 @@
 from tasks import FixedTask, Task
 from task_manager import TaskManager
 import datetime
+from custom_exceptions import NotEnoughTime
 
 class ScheduleFailure(Exception):
     def __init__(self, title="Impossible to Schedule", msg="Unknown scheduling error."):
@@ -18,6 +19,7 @@ class Planner(object):
         self.max_hours = max_hours
         self.max_days = max_days
         self.debug = debug
+        self.current_agenda = self.create_agenda_safe()
 
     def _attempt_to_schedule(self, modification=None, failure=None, err_msg="Unknown scheduling error."):
         if self.debug:
@@ -31,8 +33,10 @@ class Planner(object):
             def failure():
                 pass
         modification()
-        agenda = self.create_agenda_safe()
-        if agenda is None:
+        try:
+            agenda = self.create_agenda_safe()
+            assert agenda is not None
+        except NotEnoughTime:
             failure()
             raise ScheduleFailure(msg=err_msg)
         self.current_agenda = agenda

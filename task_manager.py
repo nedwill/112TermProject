@@ -1,6 +1,7 @@
 import datetime
 from tasks import FixedTask, Task
-from bucket_scheduler import bucket_scheduler, grow_buckets, NotEnoughTime
+from bucket_scheduler import bucket_scheduler, grow_buckets
+from custom_exceptions import NotEnoughTime
 
 class TaskManager(object):
     def __init__(self):
@@ -50,6 +51,7 @@ class TaskManager(object):
 
     #recurring tasks have an end
     def _calc_agenda_recurring(self, days_away, task, plan_tasks):
+        assert plan_tasks is not None
         for i in xrange(days_away+1):
             dayOfWeek = datetime.date.weekday(self.today + datetime.timedelta(i))
             if dayOfWeek not in task.recurring:
@@ -62,11 +64,12 @@ class TaskManager(object):
             #making a new task here might be wrong... we can design this better
             newtask = FixedTask(task.description, startTime, endTime, True)
             if newtask.hours > plan_tasks[i][0]:
-                return None
+                raise NotEnoughTime
             assert newtask.description not in plan_tasks[i][1]
             plan_tasks[i][1][newtask.description] = newtask.hours
 
     def _calc_agenda_fixed(self, plan_tasks):
+        assert plan_tasks is not None
         for task in self.fixed.values():
             days_away = (task.due - self.today).days
             if days_away < 0:
@@ -75,7 +78,7 @@ class TaskManager(object):
                 return self._calc_agenda_recurring(days_away, task, plan_tasks)
             #plan_tasks[days_away] is (hours_remaining, {name: hours_scheduled})
             if task.hours > plan_tasks[days_away][0]:
-                return None
+                raise NotEnoughTime
             plan_tasks[days_away][0] -= task.hours
             assert plan_tasks[days_away][0] >= 0 #should have checked this already
             assert task.description not in plan_tasks[days_away][1] #why would it already be in there?
@@ -83,9 +86,7 @@ class TaskManager(object):
         return plan_tasks
 
     def _calc_agenda_assignments(self, assignments, work_today, work_days, max_days, plan_tasks):
-        if len(assignments) == 0 or plan_tasks is None:
-            return plan_tasks
-
+        assert plan_tasks is not None
         if not work_today:
             plan_tasks[0][0] = 0
 
@@ -102,10 +103,7 @@ class TaskManager(object):
                 tasks.append((task.description, task.hours-task.hours_done, (task.due - self.today).days))
         
         #get the schedule
-        try:
-            plan_tasks = bucket_scheduler(plan_tasks, tasks)
-        except NotEnoughTime:
-            return None
+        plan_tasks = bucket_scheduler(plan_tasks, tasks)
 
         if max_days:
             plan_tasks = grow_buckets(plan_tasks, tasks)
@@ -114,8 +112,7 @@ class TaskManager(object):
 
     def _format_for_app(self, plan_tasks):
         "should be list of (task, hours)"
-        if plan_tasks is None:
-            return None
+        assert plan_tasks is not None
         new_plan_tasks = []
         for _hours_remaining, plan_dict in plan_tasks:
             #plan_dict is description -> hours
@@ -129,8 +126,8 @@ class TaskManager(object):
         """
         #TODO: arguments to this function should be part
         #of the tasklist __init__, not passed here
-        if max_hours == 0:
-            return None
+        #if max_hours == 0:
+        #    raise NotEnoughTime
         if work_days is None:
             work_days = [0, 1, 2, 3, 4, 5, 6]
         max_days_needed = (self.latest_task - self.today).days+1
