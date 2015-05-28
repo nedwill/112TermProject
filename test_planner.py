@@ -1,7 +1,6 @@
 from hypothesis.stateful import GenericStateMachine
 from hypothesis import strategy
-from hypothesis.strategies import integers, text, tuples, just
-from hypothesis.specifiers import sampled_from
+from hypothesis.strategies import integers, text, tuples, just, sampled_from
 from hypothesis.extra.datetime import datetimes
 from planner import Planner
 import unittest
@@ -13,18 +12,18 @@ class PlannerMachine(GenericStateMachine):
 
 	def steps(self):
 		add_task_strategy = strategy(tuples(just("add_task"), tuples(text(), integers(), integers(), datetimes())))
-		delete_task_strategy = strategy(tuples(just("delete_task"), tuples(sampled_from(self.task_names))))
 		#TODO: support recurring tasks
 		add_fixed_task_strategy = strategy(tuples(just("add_fixed_task"), tuples(text(), datetimes(), datetimes())))
-		add_hours_strategy = strategy(tuples(just("add_hours"), tuples(sampled_from(self.task_names), integers())))
-		toggle_work_day_strategy = strategy(tuples(just("toggle_work_day"), tuples(sampled_from(range(7)))))
-		reschedule_task_strategy = strategy(tuples(just("reschedule_task"), tuples(sampled_from(self.task_names), datetimes())))
 		set_max_hours_strategy = strategy(tuples(just("set_max_hours"), tuples(integers())))
 		toggle_max_days_strategy = strategy(tuples(just("toggle_max_days"), tuples(just(None)))) #just a toggle, filler here
 		always_available = add_task_strategy | add_fixed_task_strategy | set_max_hours_strategy | toggle_max_days_strategy
 		if len(self.task_names) == 0:
 			return always_available
 		else:
+			add_hours_strategy = strategy(tuples(just("add_hours"), tuples(sampled_from(self.task_names), integers())))
+			toggle_work_day_strategy = strategy(tuples(just("toggle_work_day"), tuples(sampled_from(range(7)))))
+			reschedule_task_strategy = strategy(tuples(just("reschedule_task"), tuples(sampled_from(self.task_names), datetimes())))
+			delete_task_strategy = strategy(tuples(just("delete_task"), tuples(sampled_from(self.task_names))))
 			return always_available | delete_task_strategy | add_hours_strategy | toggle_work_day_strategy | reschedule_task_strategy
 
 	def execute_step(self, step):
