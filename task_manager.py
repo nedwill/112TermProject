@@ -97,7 +97,7 @@ class TaskManager(object):
         for day in range(len(plan_tasks)):
             day_of_week = (today_day_of_week + day) % 7
             if day_of_week not in work_days:
-                plan_tasks[day_of_week][0] = 0
+                plan_tasks[day][0] = 0
 
         #format tasks in bucket_scheduler way
         tasks = []
