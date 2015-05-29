@@ -60,6 +60,7 @@ class PlannerMachine(GenericStateMachine):
             return always_available | delete_task_strategy | add_hours_strategy | toggle_work_day_strategy | reschedule_task_strategy
 
     def execute_step(self, step):
+        #TODO: make this track hours on the tasks
         action, data = step
         if action == "add_task":
             (name, hours, hours_done, due) = data
@@ -120,6 +121,7 @@ class PlannerMachine(GenericStateMachine):
                 return
         else:
             assert False
+        assert self.planner.current_agenda is not None
         #try to make schedule after doing action?
         #catch it trying to make the new schedule and don't include the new task if it fails
 
