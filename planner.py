@@ -124,6 +124,8 @@ class Planner(object):
         self._attempt_to_schedule(modification, failure, err_msg)
 
     def reschedule_task(self, task, date):
+        if task is None:
+            raise Exception("Nonexistant task being rescheduled.")
         if hasattr(task, "recurring") and task.recurring:
             raise ScheduleFailure(msg="You can't reschedule a recurring task!")
         if date <= datetime.date.today():
