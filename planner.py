@@ -126,8 +126,8 @@ class Planner(object):
     def reschedule_task(self, task, date):
         if hasattr(task, "recurring") and task.recurring:
             raise ScheduleFailure(msg="You can't reschedule a recurring task!")
-        if date < datetime.date.today():
-            raise ScheduleFailure(msg="You can't reschedule that task to the past!")
+        if date <= datetime.date.today():
+            raise ScheduleFailure(msg="You must reschedule a task to a future date!")
         if date > self.tasks.latest_task:
             self.tasks.latest_task = date
 
