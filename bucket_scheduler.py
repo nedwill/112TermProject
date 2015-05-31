@@ -89,7 +89,7 @@ def grow_buckets(buckets, tasks):
             d[to_update] = hours_to_add
         
         buckets[i] = (hours_available-hours_to_add, d)
-        for j in range(len(buckets)-1, -1, -1):
+        for j in xrange(len(buckets)-1, -1, -1):
             (hours_available_take, d_take) = buckets[j]
             if to_update in d_take:
                 if d_take[to_update] == hours_to_add:
