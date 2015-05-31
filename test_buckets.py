@@ -30,7 +30,19 @@ def test_bucket_scheduler(buckets, tasks):
         buckets = bucket_scheduler(fixed_buckets, fixed_tasks)
     except NotEnoughTime:
         return
-    grow_buckets(buckets, fixed_tasks)
+    buckets = grow_buckets(buckets, fixed_tasks)
+    grown_buckets = {}
+    for _hours, d in buckets:
+        for task_name, hours in d.iteritems():
+            if task_name in grown_buckets:
+                grown_buckets[task_name] += hours
+            else:
+                grown_buckets[task_name] = hours
+    task_buckets = {}
+    for name, hours_remaining, _last_bucket_num in fixed_tasks:
+        if hours_remaining > 0:
+            task_buckets[name] = hours_remaining
+    assert grown_buckets == task_buckets
 
 #test_bucket_scheduler_dev()
 test_bucket_scheduler()
