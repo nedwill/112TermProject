@@ -20,7 +20,7 @@ def get_task_dict(buckets, tasks):
 
 def get_non_max_set(d):
     if len(d) == 0:
-        return set()
+        return d
     m = max(d.values())
     non_max = set()
     for k, v in d.iteritems():
