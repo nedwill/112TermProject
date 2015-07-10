@@ -94,7 +94,7 @@ class TaskManager(object):
             plan_tasks[0][0] = 0
 
         today_day_of_week = datetime.date.weekday(self.today)
-        for day in range(len(plan_tasks)):
+        for day in xrange(len(plan_tasks)):
             day_of_week = (today_day_of_week + day) % 7
             if day_of_week not in work_days:
                 plan_tasks[day][0] = 0
