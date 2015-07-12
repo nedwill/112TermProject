@@ -3,7 +3,7 @@ from tasks import Task
 import datetime
 from custom_exceptions import NotEnoughTime
 
-MAX_HOURS = 10
+MAX_HOURS = 14
 MAXIMIZE_DAYS = False
 WORK_DAYS = None #default every day
 WORK_TODAY = False
@@ -37,6 +37,7 @@ for task in tasks_input:
 	desc, due, hours = task.split(';') #do this with csv?
 	due_dt = datetime.date(*map(int, due.split('-'))) #should handle year/day thing
 	mgr.add(Task(desc, int(hours), due_dt))
+
 try:
 	agenda = mgr.calc_agenda(MAX_HOURS, max_days=MAXIMIZE_DAYS, work_days=WORK_DAYS, work_today=WORK_TODAY)
 	for i, plan in enumerate(agenda):
@@ -44,7 +45,8 @@ try:
 			day = index_to_date(i)
 			hours_total = sum(x[1] for x in plan)
 			print "{}, {} (work {} hours total):".format(week_index_to_day(day.weekday()), day, hours_total)
-			for name, hours in plan:
-				print "    {}: {} hour{}".format(name, hours, 's' if hours > 1 else '')
+			for task, hours in plan:
+				print "    {}: {} hour{} ({} hour{} total)".format(task,
+					hours, 's' if hours > 1 else '', task.hours, 's' if task.hours > 1 else '')
 except NotEnoughTime:
 	print "Not enough time available to finish your work. :("
