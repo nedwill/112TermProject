@@ -7,14 +7,14 @@ from custom_exceptions import InvalidTask
 MAX_YEAR = 2100
 
 class Task(object): #recurring attribute here?
-    def __init__(self, description, hours, hours_done, due):
-        if hours < hours_done or hours < 0 or hours_done < 0:
+    def __init__(self, description, hours, due):
+        if hours <= 0:
             raise InvalidTask
         if due.year > MAX_YEAR:
             raise InvalidTask
         self.description = description
         self.hours = hours
-        self.hours_done = hours_done
+        self.hours_done = 0
         self.due = due
 
     def set_due_date(self, date):
