@@ -8,7 +8,6 @@ class TaskManager(object):
         self.fixed = {} #fixed tasks
         self.assignments = {} #assignments with due dates
         self.latest_task = datetime.date.today() #initialize last task date to today
-        self.today = datetime.date.today()
 
     def add(self, task):
         if task.description in set.union(set(self.fixed), set(self.assignments)):
@@ -52,10 +51,10 @@ class TaskManager(object):
     def _calc_agenda_recurring(self, days_away, task, plan_tasks):
         assert plan_tasks is not None
         for i in xrange(days_away+1):
-            dayOfWeek = datetime.date.weekday(self.today + datetime.timedelta(i))
+            dayOfWeek = datetime.date.weekday(datetime.date.today() + datetime.timedelta(i))
             if dayOfWeek not in task.recurring:
                 continue
-            due = self.today + datetime.timedelta(i)
+            due = datetime.date.today() + datetime.timedelta(i)
             startHour = datetime.time(task.startTime.hour)
             endHour = datetime.time(task.endTime.hour)
             startTime = datetime.datetime.combine(due,startHour)
@@ -73,7 +72,7 @@ class TaskManager(object):
     def _calc_agenda_fixed(self, plan_tasks):
         assert plan_tasks is not None
         for task in self.fixed.values():
-            days_away = (task.due - self.today).days
+            days_away = (task.due - datetime.date.today()).days
             if days_away < 0:
                 continue
             if task.recurring is not None and len(task.recurring) > 0:
@@ -93,19 +92,11 @@ class TaskManager(object):
         if not work_today:
             plan_tasks[0][0] = 0
 
-        today_day_of_week = datetime.date.weekday(self.today)
-        for day in xrange(len(plan_tasks)):
-            day_of_week = (today_day_of_week + day) % 7
-            if day in user_specified_days:
-                plan_tasks[day][0] = user_specified_days[day]
-            elif day_of_week not in work_days:
-                plan_tasks[day][0] = 0
-
         #format tasks in bucket_scheduler way
         tasks = []
         for task in assignments:
-            if task.due > self.today:
-                tasks.append((task.description, task.hours, (task.due - self.today).days))
+            if task.due > datetime.date.today():
+                tasks.append((task.description, task.hours, (task.due - datetime.date.today()).days))
         
         #get the schedule
         plan_tasks = bucket_scheduler(plan_tasks, tasks)
@@ -125,6 +116,16 @@ class TaskManager(object):
             new_plan_tasks.append(list(sorted(plan_dict_list, key=lambda x: x[0].due)))
         return new_plan_tasks
 
+    def init_bucket(self, day, max_hours, work_days, user_specified_days):
+        today_day_of_week = datetime.date.weekday(datetime.date.today())
+        day_of_week = (today_day_of_week + day) % 7
+        if day in user_specified_days:
+            return [user_specified_days[day], {}]
+        elif day_of_week not in work_days:
+            return [0, {}]
+        else:
+            return [max_hours, {}]
+
     def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True, user_specified_days={}):
         """
         max_days maximizes work in given time at expense of easy/time efficiency
@@ -133,11 +134,14 @@ class TaskManager(object):
         #of the tasklist __init__, not passed here
         if work_days is None:
             work_days = [0, 1, 2, 3, 4, 5, 6]
-        max_days_needed = (self.latest_task - self.today).days+1
+        max_days_needed = (self.latest_task - datetime.date.today()).days+1
         #plan_tasks should consist of tuples but they don't support assignment
         #those lists are mutable tuples... maybe that should be fixed for cleanliness
-        plan_tasks = [[max_hours, {}] for _ in xrange(max_days_needed)] #initialize with number of needed days
+        plan_tasks = [self.init_bucket(day, max_hours, work_days, user_specified_days) for day in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self._calc_agenda_fixed(plan_tasks)
         plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today, work_days, user_specified_days, max_days, plan_tasks)
         plan_tasks = self._format_for_app(plan_tasks) #change format of output data
         return plan_tasks
+
+    def num_tasks(self):
+        return len(self.assignments) + len(self.fixed)

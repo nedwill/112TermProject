@@ -13,7 +13,7 @@ except ValueError:
 	print "[-] Invalid max hours provided: assuming 8."
 	MAX_HOURS = 8
 MAXIMIZE_DAYS = False
-WORK_DAYS = [0,1,2,3,4] #None #default every day
+WORK_DAYS = None #[0,1,2,3,4] #None #default every day
 WORK_TODAY = True
 USER_SPEC_DAYS = {}
 
@@ -31,7 +31,8 @@ except IOError:
 
 mgr = TaskManager()
 
-tasks_input = open('todo', 'r').read().splitlines()
+with open('todo', 'r') as f:
+	tasks_input = f.read().splitlines()
 
 def index_to_date(i):
 	return datetime.date.today() + datetime.timedelta(i)
@@ -62,6 +63,9 @@ for task in tasks_input:
 	if "fixed " == desc[:len("fixed ")]:
 		new_task = FixedTask(desc, int(hours), due_dt) #fake the starttime and endtime
 	else:
+		if due_dt <= datetime.date.today():
+			print "[!] Task `{}` due on or before today.".format(desc)
+			continue
 		new_task = Task(desc, int(hours), due_dt)
 	try:
 		mgr.add(new_task)
@@ -69,7 +73,7 @@ for task in tasks_input:
 		print "found duplicate task {}".format(desc)
 		exit()
 
-print "[+] {} tasks processed. Attempting to generate schedule.".format(len(tasks_input))
+print "[+] {} tasks processed. Attempting to generate schedule.".format(mgr.num_tasks())
 
 while MAX_HOURS < 24:
 	try: #we often expect this to fail so using an exception is a little worse than returning None
@@ -78,8 +82,7 @@ while MAX_HOURS < 24:
 		break
 	except NotEnoughTime:
 		#it's a little spamming to print this every time. do it better later
-		print "[-] Not enough time available to finish your work in {} hours.".format(MAX_HOURS)
-		print "[*] Trying with an additional hour per day."
+		print "[!] Not enough time available to finish your work in {} hours.".format(MAX_HOURS)
 		MAX_HOURS += 1
 
 if MAX_HOURS >= 24:
