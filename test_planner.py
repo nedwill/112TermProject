@@ -13,7 +13,7 @@ def test_set_max_hours():
 
 def test_add_task():
     planner = Planner()
-    data = (u'', 0, 0, datetime.date(2000, 1, 1))
+    data = (u'', 1, datetime.date(2000, 1, 1))
     planner.add_task(*data)
 
 def run_test(steps):
@@ -23,18 +23,18 @@ def run_test(steps):
 
 def test_add_same_name():
     "unicode bug"
-    steps = [('add_task', (u'', 8388608, 0, datetime.datetime(4455, 7, 13, 15, 55, 23, 881576))),
+    steps = [('add_task', (u'', 8388608, datetime.datetime(4455, 7, 13, 15, 55, 23, 881576))),
         ('add_fixed_task', (u'', datetime.datetime(2464, 9, 1, 22, 0, 6, 681778), datetime.datetime(8725, 7, 10, 16, 10, 0, 564361)))]
     run_test(steps)
 
 def test_timeout():
     steps = [('toggle_max_days', (None,)),
-        ('add_task', (u'', 69, 0, datetime.datetime(1265, 11, 27, 5, 15, 28, 137113))),
+        ('add_task', (u'', 69, datetime.datetime(1265, 11, 27, 5, 15, 28, 137113))),
         ('reschedule_task', (u'', datetime.datetime(6098, 7, 10, 2, 0, 47, 447492)))]
     run_test(steps)
 
 def test_toggle_workday():
-    steps = [('add_task', (u'', 0, 0, datetime.datetime(2000, 1, 1, 0, 0))),
+    steps = [('add_task', (u'', 0, datetime.datetime(2000, 1, 1, 0, 0))),
         ('toggle_work_day', (3,))]
     run_test(steps)
 
@@ -44,7 +44,7 @@ class PlannerMachine(GenericStateMachine):
         self.planner = Planner()
 
     def steps(self):
-        add_task_strategy = strategy(tuples(just("add_task"), tuples(text(), integers(), integers(), datetimes())))
+        add_task_strategy = strategy(tuples(just("add_task"), tuples(text(), integers(), datetimes())))
         #TODO: support recurring tasks
         add_fixed_task_strategy = strategy(tuples(just("add_fixed_task"), tuples(text(), datetimes(), datetimes())))
         set_max_hours_strategy = strategy(tuples(just("set_max_hours"), tuples(integers(min_value=0, max_value=24))))
@@ -63,13 +63,13 @@ class PlannerMachine(GenericStateMachine):
         #TODO: make this track hours on the tasks
         action, data = step
         if action == "add_task":
-            (name, hours, hours_done, due) = data
+            (name, hours, due) = data
             if name in self.task_names:
                 return
             due = due.date() #make a date, not a datetime...
             assert self.planner.get_task(name) is None
             try:
-                self.planner.add_task(name, hours, hours_done, due)
+                self.planner.add_task(name, hours, due)
             except ScheduleFailure:
                 return
             self.task_names.add(name)

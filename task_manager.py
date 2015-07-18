@@ -36,8 +36,8 @@ class TaskManager(object):
     def add_hours(self, description, hours):
         if description in self.assignments:
             task = self.assignments[description]
-            task.hours_done += hours
-            if task.hours_done >= task.hours:
+            task.hours -= hours
+            if task.hours <= 0:
                 self.remove(description)
             return task
 

@@ -54,9 +54,9 @@ class Planner(object):
         self._attempt_to_schedule(modification, failure, err_msg)
 
     #TODO: drop hoursDone from add_task. that should always init to 0
-    def add_task(self, description, hours, hoursDone, due):
+    def add_task(self, description, hours, due):
         try:
-            task = Task(description, hours, hoursDone, due)
+            task = Task(description, hours, due)
         except InvalidTask:
             raise ScheduleFailure(title="Invalid Task", msg="The number of hours was invalid.")
         self._add_task_and_schedule(task)
