@@ -75,6 +75,7 @@ for task in tasks_input:
 
 print "[+] {} tasks processed. Attempting to generate schedule.".format(mgr.num_tasks())
 
+prompted = False
 while MAX_HOURS < 24:
 	try: #we often expect this to fail so using an exception is a little worse than returning None
 		agenda = mgr.calc_agenda(MAX_HOURS, max_days=MAXIMIZE_DAYS,\
@@ -82,7 +83,9 @@ while MAX_HOURS < 24:
 		break
 	except NotEnoughTime:
 		#it's a little spamming to print this every time. do it better later
-		print "[!] Not enough time available to finish your work in {} hours.".format(MAX_HOURS)
+		if not prompted:
+			print "[!] Not enough time available to finish your work in {} hours, increasing as necessary.".format(MAX_HOURS)
+			prompted = True
 		MAX_HOURS += 1
 
 if MAX_HOURS >= 24:
