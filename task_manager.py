@@ -88,7 +88,7 @@ class TaskManager(object):
             plan_tasks[days_away][1][task.description] = task.hours
         return plan_tasks
 
-    def _calc_agenda_assignments(self, assignments, work_today, work_days, max_days, plan_tasks):
+    def _calc_agenda_assignments(self, assignments, work_today, work_days, user_specified_days, max_days, plan_tasks):
         assert plan_tasks is not None
         if not work_today:
             plan_tasks[0][0] = 0
@@ -96,14 +96,16 @@ class TaskManager(object):
         today_day_of_week = datetime.date.weekday(self.today)
         for day in xrange(len(plan_tasks)):
             day_of_week = (today_day_of_week + day) % 7
-            if day_of_week not in work_days:
+            if day in user_specified_days:
+                plan_tasks[day][0] = user_specified_days[day]
+            elif day_of_week not in work_days:
                 plan_tasks[day][0] = 0
 
         #format tasks in bucket_scheduler way
         tasks = []
         for task in assignments:
             if task.due > self.today:
-                tasks.append((task.description, task.hours-task.hours_done, (task.due - self.today).days))
+                tasks.append((task.description, task.hours, (task.due - self.today).days))
         
         #get the schedule
         plan_tasks = bucket_scheduler(plan_tasks, tasks)
@@ -123,7 +125,7 @@ class TaskManager(object):
             new_plan_tasks.append(list(sorted(plan_dict_list, key=lambda x: x[0].due)))
         return new_plan_tasks
 
-    def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True):
+    def calc_agenda(self, max_hours, max_days=False, work_days=None, work_today=True, user_specified_days={}):
         """
         max_days maximizes work in given time at expense of easy/time efficiency
         """
@@ -136,6 +138,6 @@ class TaskManager(object):
         #those lists are mutable tuples... maybe that should be fixed for cleanliness
         plan_tasks = [[max_hours, {}] for _ in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self._calc_agenda_fixed(plan_tasks)
-        plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today, work_days, max_days, plan_tasks)
+        plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today, work_days, user_specified_days, max_days, plan_tasks)
         plan_tasks = self._format_for_app(plan_tasks) #change format of output data
         return plan_tasks

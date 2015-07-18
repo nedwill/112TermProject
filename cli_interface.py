@@ -13,8 +13,21 @@ except ValueError:
 	print "[-] Invalid max hours provided: assuming 8."
 	MAX_HOURS = 8
 MAXIMIZE_DAYS = False
-WORK_DAYS = None #default every day
+WORK_DAYS = [0,1,2,3,4] #None #default every day
 WORK_TODAY = True
+USER_SPEC_DAYS = {}
+
+try:
+	with open('user_specified_days', 'r') as f:
+		user_specified_days_raw = f.read()
+	for line in user_specified_days_raw.splitlines():
+		date, hours = line.split(";")
+		date_dt = datetime.date(*map(int, date.split('-')))
+		offset = (date_dt - datetime.date.today()).days
+		assert offset >= 0
+		USER_SPEC_DAYS[offset] = int(hours)
+except IOError:
+	print "[*] User specified days not provided."
 
 mgr = TaskManager()
 
@@ -60,7 +73,8 @@ print "[+] {} tasks processed. Attempting to generate schedule.".format(len(task
 
 while MAX_HOURS < 24:
 	try: #we often expect this to fail so using an exception is a little worse than returning None
-		agenda = mgr.calc_agenda(MAX_HOURS, max_days=MAXIMIZE_DAYS, work_days=WORK_DAYS, work_today=WORK_TODAY)
+		agenda = mgr.calc_agenda(MAX_HOURS, max_days=MAXIMIZE_DAYS,\
+			work_days=WORK_DAYS, work_today=WORK_TODAY, user_specified_days=USER_SPEC_DAYS)
 		break
 	except NotEnoughTime:
 		#it's a little spamming to print this every time. do it better later

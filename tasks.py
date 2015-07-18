@@ -14,7 +14,6 @@ class Task(object): #recurring attribute here?
             raise InvalidTask
         self.description = description
         self.hours = hours
-        self.hours_done = 0
         self.due = due
 
     def set_due_date(self, date):
@@ -30,21 +29,20 @@ class Task(object): #recurring attribute here?
             self.hours - self.hours_done, (self.due - datetime.date.today()).days)
 
 class FixedTask(Task):
-    def __init__(self, description, startTime, endTime, recurring=None):
-        self.startTime = startTime
-        self.endTime = endTime
-        if endTime <= startTime:
-            raise InvalidTask
-        hours = ((endTime - startTime).seconds)/3600
-        due = startTime.date()
-        hours_done = 0 #can't have hours completed in advance on a fixed event
+    def __init__(self, description, hours, due, recurring=None):
+        #self.startTime = startTime
+        #self.endTime = endTime
+        #if endTime <= startTime:
+        #    raise InvalidTask
+        #hours = ((endTime - startTime).seconds)/3600
+        #due = startTime.date()
         self.recurring = recurring
-        super(FixedTask, self).__init__(description, hours, hours_done, due)
+        super(FixedTask, self).__init__(description, hours, due)
 
-    def __str__(self):
-        return self.description + " {}:{:02d}-{}:{:02d}".format(self.startTime.hour,
-            self.startTime.minute, self.endTime.hour, self.endTime.minute)
+    #def __str__(self):
+    #    return self.description + " {}:{:02d}-{}:{:02d}".format(self.startTime.hour,
+    #        self.startTime.minute, self.endTime.hour, self.endTime.minute)
 
-    def __repr__(self):
-        return "{}, Hours Left: {}, Days Left: {}".format(self.description,
-            self.hours - self.hours_done, (self.due - datetime.date.today()).days)
+    #def __repr__(self):
+    #    return "{}, Hours Left: {}, Days Left: {}".format(self.description,
+    #        self.hours - self.hours_done, (self.due - datetime.date.today()).days)
