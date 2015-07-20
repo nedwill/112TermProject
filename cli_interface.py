@@ -89,7 +89,7 @@ while MAX_HOURS < 24:
 		MAX_HOURS += 1
 
 if MAX_HOURS >= 24:
-	"[-] Not enough time available in 24 hours a day to finish your work. :("
+	print "[-] Not enough time available in 24 hours a day to finish your work. :("
 	exit()
 
 print "[+] Schedule successfully generated with max {} hours per day.".format(MAX_HOURS)
