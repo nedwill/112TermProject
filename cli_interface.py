@@ -24,8 +24,8 @@ try:
 		date, hours = line.split(";")
 		date_dt = datetime.date(*map(int, date.split('-')))
 		offset = (date_dt - datetime.date.today()).days
-		assert offset >= 0
-		USER_SPEC_DAYS[offset] = int(hours)
+		if offset >= 0:
+			USER_SPEC_DAYS[offset] = int(hours)
 except IOError:
 	print "[*] User specified days not provided."
 
