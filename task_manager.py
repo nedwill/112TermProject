@@ -110,7 +110,7 @@ class TaskManager(object):
         "should be list of (task, hours)"
         assert plan_tasks is not None
         new_plan_tasks = []
-        for _hours_remaining, plan_dict in plan_tasks:
+        for _, plan_dict in plan_tasks:
             #plan_dict is description -> hours
             plan_dict_list = [(self.get_task(x), y) for (x, y) in plan_dict.items()]
             new_plan_tasks.append(list(sorted(plan_dict_list, key=lambda x: x[0].due)))
