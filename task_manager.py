@@ -139,7 +139,8 @@ class TaskManager(object):
         max_days_needed = (self.latest_task - datetime.date.today()).days+1
         #plan_tasks should consist of tuples but they don't support assignment
         #those lists are mutable tuples... maybe that should be fixed for cleanliness
-        plan_tasks = [self.init_bucket(day, max_hours, work_days, user_specified_days) for day in xrange(max_days_needed)] #initialize with number of needed days
+        plan_tasks = [self.init_bucket(day, max_hours,
+            work_days, user_specified_days) for day in xrange(max_days_needed)] #initialize with number of needed days
         plan_tasks = self._calc_agenda_fixed(plan_tasks)
         plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today, max_days, plan_tasks)
         plan_tasks = self._format_for_app(plan_tasks) #change format of output data
