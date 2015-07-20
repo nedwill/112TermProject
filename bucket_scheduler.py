@@ -11,7 +11,7 @@ def get_task_dict(buckets, tasks):
     "the amount of hours from the last day a task is available"
     task_set = set(task[0] for task in tasks)
     d = {}
-    for _hours, future_d in buckets:
+    for _, future_d in buckets:
         for name, hours in future_d.iteritems():
             if name in task_set:
                 #an assignment, not a fixed task
