@@ -3,6 +3,7 @@ from tasks import Task, FixedTask
 import datetime
 import sys
 from custom_exceptions import NotEnoughTime, TaskAlreadyExists
+from tabulate import tabulate
 
 try:
 	MAX_HOURS = int(sys.argv[1])
@@ -98,7 +99,9 @@ for i, plan in enumerate(agenda):
 		day = index_to_date(i)
 		hours_total = sum(x[1] for x in plan)
 		print "{}, {} (work {} hours total):".format(week_index_to_day(day.weekday()), day, hours_total)
-		for task, hours in plan:
+		final = [[task.description, "{}/{}".format(hours, task.hours), task.due.strftime("%m-%d")] for (task, hours) in plan]
+		print tabulate(final, headers=["Task", "Hours", "Due"])
+		#for task, hours in plan:
 			#print "    {}: {} hour{} ({} hour{} total)".format(task,
 			#	hours, 's' if hours > 1 else '', task.hours, 's' if task.hours > 1 else '')
-			print "    {}: {} hour{}".format(task, hours, 's' if hours > 1 else '')
+		#	print "    {}: {} hour{}".format(task, hours, 's' if hours > 1 else '')
