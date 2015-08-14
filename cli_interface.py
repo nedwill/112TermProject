@@ -84,7 +84,7 @@ while MAX_HOURS < 24:
 		break
 	except NotEnoughTime:
 		#it's a little spamming to print this every time. do it better later
-		if not prompted:
+		if not prompted:	
 			print "[!] Not enough time available to finish your work in {} hours, increasing as necessary.".format(MAX_HOURS)
 			prompted = True
 		MAX_HOURS += 1
@@ -98,6 +98,7 @@ for i, plan in enumerate(agenda):
 	if len(plan) > 0:
 		day = index_to_date(i)
 		hours_total = sum(x[1] for x in plan)
+		print ""
 		print "{}, {} (work {} hours total):".format(week_index_to_day(day.weekday()), day, hours_total)
 		final = [[task.description, "{}/{}".format(hours, task.hours), task.due.strftime("%m-%d")] for (task, hours) in plan]
 		print tabulate(final, headers=["Task", "Hours", "Due"])
