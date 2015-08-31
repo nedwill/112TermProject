@@ -55,19 +55,43 @@ def week_index_to_day(i):
 		return "Sunday"
 	raise Exception("Invalid Day Index: {}".format(i))
 
+def make_recurring(recurring):
+	rec = []
+	d = {
+		"monday": 0,
+		"tuesday": 1,
+		"wednesday": 2,
+		"thursday": 3,
+		"friday": 4,
+		"saturday": 5,
+		"sunday": 6
+	}
+	recurring = recurring.lower()
+	for day_name, day_num in d.iteritems():
+		if day_name in recurring:
+			rec.append(day_num)
+	return rec
+
 #we don't handle fixed tasks yet, need a nice way to do this
 for task in tasks_input:
+	task = task.strip()
 	if task[0] == "#": #comments!
 		continue
-	desc, due, hours = task.split(';') #do this with csv?
-	due_dt = datetime.date(*map(int, due.split('-'))) #should handle year/day thing
-	if "fixed " == desc[:len("fixed ")]:
-		new_task = FixedTask(desc, int(hours), due_dt) #fake the starttime and endtime
+	if "recurring " == task[:len("recurring ")]:
+		desc, recurring, due, hours = task.split(';')
+		due_dt = datetime.date(*map(int, due.split('-'))) #should handle year/day thing
+		recurring = make_recurring(recurring)
+		new_task = FixedTask(desc, int(hours), due_dt, recurring)
 	else:
-		if due_dt <= datetime.date.today():
-			print "[!] Task `{}` due on or before today.".format(desc)
-			continue
-		new_task = Task(desc, int(hours), due_dt)
+		desc, due, hours = task.split(';') #do this with csv?
+		due_dt = datetime.date(*map(int, due.split('-')))
+		if "fixed " == desc[:len("fixed ")]:
+			new_task = FixedTask(desc, int(hours), due_dt) #fake the starttime and endtime
+		else:
+			if due_dt <= datetime.date.today():
+				print "[!] Task `{}` due on or before today.".format(desc)
+				continue
+			new_task = Task(desc, int(hours), due_dt)
 	try:
 		mgr.add(new_task)
 	except TaskAlreadyExists:

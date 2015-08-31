@@ -54,19 +54,12 @@ class TaskManager(object):
             dayOfWeek = datetime.date.weekday(datetime.date.today() + datetime.timedelta(i))
             if dayOfWeek not in task.recurring:
                 continue
-            due = datetime.date.today() + datetime.timedelta(i)
-            startHour = datetime.time(task.startTime.hour)
-            endHour = datetime.time(task.endTime.hour)
-            startTime = datetime.datetime.combine(due,startHour)
-            endTime = datetime.datetime.combine(due,endHour)
-            #making a new task here might be wrong... we can design this better
-            newtask = FixedTask(task.description, startTime, endTime, True)
-            if newtask.hours > plan_tasks[i][0]:
+            if task.hours > plan_tasks[i][0]:
                 plan_tasks[i][0] = 0
             else:
-                plan_tasks[i][0] -= newtask.hours
-            assert newtask.description not in plan_tasks[i][1]
-            plan_tasks[i][1][newtask.description] = newtask.hours
+                plan_tasks[i][0] -= task.hours
+            assert task.description not in plan_tasks[i][1]
+            plan_tasks[i][1][task.description] = task.hours
         return plan_tasks
 
     def _calc_agenda_fixed(self, plan_tasks):
