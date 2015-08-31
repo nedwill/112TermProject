@@ -69,15 +69,16 @@ class TaskManager(object):
             if days_away < 0:
                 continue
             if task.recurring is not None and len(task.recurring) > 0:
-                return self._calc_agenda_recurring(days_away, task, plan_tasks)
-            #plan_tasks[days_away] is (hours_remaining, {name: hours_scheduled})
-            if task.hours > plan_tasks[days_away][0]:
-                plan_tasks[days_away][0] = 0
+                plan_tasks = self._calc_agenda_recurring(days_away, task, plan_tasks)
             else:
-                plan_tasks[days_away][0] -= task.hours
-            assert plan_tasks[days_away][0] >= 0 #should have checked this already
-            assert task.description not in plan_tasks[days_away][1] #why would it already be in there?
-            plan_tasks[days_away][1][task.description] = task.hours
+                #plan_tasks[days_away] is (hours_remaining, {name: hours_scheduled})
+                if task.hours > plan_tasks[days_away][0]:
+                    plan_tasks[days_away][0] = 0
+                else:
+                    plan_tasks[days_away][0] -= task.hours
+                assert plan_tasks[days_away][0] >= 0 #should have checked this already
+                assert task.description not in plan_tasks[days_away][1] #why would it already be in there?
+                plan_tasks[days_away][1][task.description] = task.hours
         return plan_tasks
 
     def _calc_agenda_assignments(self, assignments, work_today, max_days, plan_tasks):
