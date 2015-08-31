@@ -81,7 +81,6 @@ for task in tasks_input:
 		desc, recurring, due, hours = task.split(';')
 		due_dt = datetime.date(*map(int, due.split('-'))) #should handle year/day thing
 		recurring = make_recurring(recurring)
-		print desc, int(hours), due_dt, recurring
 		new_task = FixedTask(desc, int(hours), due_dt, recurring)
 	else:
 		desc, due, hours = task.split(';') #do this with csv?
@@ -119,7 +118,7 @@ if MAX_HOURS >= 24:
 	exit()
 
 print "[+] Schedule successfully generated with max {} hours per day.".format(MAX_HOURS)
-for i, plan in enumerate(agenda):
+for i, plan in enumerate(agenda[:7]):
 	if len(plan) > 0:
 		day = index_to_date(i)
 		hours_total = sum(x[1] for x in plan)
