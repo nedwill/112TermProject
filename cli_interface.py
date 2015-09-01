@@ -75,7 +75,7 @@ def make_recurring(recurring):
 #we don't handle fixed tasks yet, need a nice way to do this
 for task in tasks_input:
 	task = task.strip()
-	if task[0] == "#": #comments!
+	if task == "" or task[0] == "#": #comments!
 		continue
 	if "recurring " == task[:len("recurring ")]:
 		desc, recurring, due, hours = task.split(';')
@@ -84,7 +84,11 @@ for task in tasks_input:
 		new_task = FixedTask(desc, int(hours), due_dt, recurring)
 	else:
 		desc, due, hours = task.split(';') #do this with csv?
-		due_dt = datetime.date(*map(int, due.split('-')))
+		try:
+			due_dt = datetime.date(*map(int, due.split('-')))
+		except ValueError:
+			print "[-] Invalid due date in line `{}`!".format(task)
+			exit()
 		if "fixed " == desc[:len("fixed ")]:
 			new_task = FixedTask(desc, int(hours), due_dt) #fake the starttime and endtime
 		else:
