@@ -52,7 +52,7 @@ class TaskManager(object):
     # recurring tasks have an end
     def _calc_agenda_recurring(self, days_away, task, plan_tasks):
         assert plan_tasks is not None
-        for i in xrange(days_away + 1):
+        for i in range(days_away + 1):
             dayOfWeek = datetime.date.weekday(
                 datetime.date.today() + datetime.timedelta(i)
             )
@@ -95,14 +95,9 @@ class TaskManager(object):
         # format tasks in bucket_scheduler way
         tasks = []
         for task in assignments:
+            # TODO(nedwill): we should probably print expired tasks somewhere
             if task.due > datetime.date.today():
-                tasks.append(
-                    (
-                        task.description,
-                        task.hours,
-                        (task.due - datetime.date.today()).days,
-                    )
-                )
+                tasks.append(task)
 
         # get the schedule
         plan_tasks = bucket_scheduler(plan_tasks, tasks)

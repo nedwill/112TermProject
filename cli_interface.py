@@ -71,7 +71,7 @@ def make_recurring(recurring):
         "sunday": 6,
     }
     recurring = recurring.lower()
-    for day_name, day_num in d.iteritems():
+    for day_name, day_num in d.items():
         if day_name in recurring:
             rec.append(day_num)
     return rec

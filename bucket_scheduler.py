@@ -4,13 +4,18 @@ tasks are (name, hours_remaining, last_bucket_num)
 tasks can only be placed into buckets < last_bucket_num
 """
 
+import datetime
 import time
 from custom_exceptions import NotEnoughTime
 
 
+def bucket_to_date(bucket_num):
+    return datetime.date.today() + datetime.timedelta(days=bucket_num)
+
+
 def get_task_dict(buckets, tasks):
     "the amount of hours from the last day a task is available"
-    task_set = set(task[0] for task in tasks)
+    task_set = set(task.description for task in tasks)
     d = {}
     for _, future_d in buckets:
         for name, hours in future_d.items():
@@ -33,13 +38,13 @@ def get_non_max_set(d):
 
 def sort_tasks(tasks):
     "sort tasks in order of due date"
-    return sorted(tasks, key=lambda x: x[2])
+    return sorted(tasks, key=lambda task: task.bucket_num())
 
 
 def get_to_update(tasks_sorted, inc_set):
-    for name, _, _ in tasks_sorted:
-        if name in inc_set:
-            return name
+    for task in tasks_sorted:
+        if task.description in inc_set:
+            return task.description
     return None
 
 
@@ -118,16 +123,18 @@ def bucket_scheduler(buckets, tasks):
     where tasks are scheduled.
     """
     start = time.time()
-    if any(x[2] > len(buckets) for x in tasks):
+    if any(task.bucket_num() > len(buckets) for task in tasks):
         raise Exception("Not enough buckets!")
-    if any(x[2] <= 0 for x in tasks):
+    if any(task.bucket_num() <= 0 for task in tasks):
         raise Exception("Invalid last bucket number!")
     if any(x[0] < 0 for x in buckets):
         raise Exception("Invalid (negative) bucket size!")
-    if sum(task[1] for task in tasks) > sum(bucket[0] for bucket in buckets):
+    if sum(task.hours for task in tasks) > sum(bucket[0] for bucket in buckets):
         raise NotEnoughTime
     tasks_sorted = sort_tasks(tasks)
-    for name, hours_remaining, last_bucket_num in tasks_sorted:
+    for task in tasks_sorted:
+        hours_remaining = task.hours
+        last_bucket_num = task.bucket_num()
         while hours_remaining > 0:
             if time.time() > start + 2:
                 raise Exception("Timeout")
@@ -139,10 +146,10 @@ def bucket_scheduler(buckets, tasks):
                 if bucket_hours_available > 0:
                     buckets[i] = (bucket_hours_available - hours_to_add, d)
                     hours_remaining -= hours_to_add
-                    if name in d:
-                        d[name] += hours_to_add
+                    if task.description in d:
+                        d[task.description] += hours_to_add
                     else:
-                        d[name] = hours_to_add
+                        d[task.description] = hours_to_add
                 if hours_remaining == 0:
                     break
     return buckets
