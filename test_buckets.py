@@ -25,13 +25,10 @@ def test_bucket_scheduler(buckets, tasks_):
 
     "TODO: improve checking for time availability"
     tasks = []
-
-    for task in tasks:
+    for task in tasks_:
         # assume(all(task[1] <= len(buckets) for task in tasks))
-        task[1] %= len(buckets)
         # assume(all(task[1] > 0 for task in tasks))
-        if task[1] <= 0:
-            task[1] = 1
+        tasks.append((task[0], max(task[1] % len(buckets), 1)))
 
     # for faster testing
     assume(all(bucket >= 0 for bucket in buckets))
