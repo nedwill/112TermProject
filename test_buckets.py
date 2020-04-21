@@ -3,17 +3,19 @@ from hypothesis.strategies import lists, integers, tuples
 from bucket_scheduler import bucket_scheduler, grow_buckets
 from custom_exceptions import NotEnoughTime
 
-#should schedule everything on first day
+# should schedule everything on first day
 def test_bucket_scheduler_constrained():
     buckets = [(8, {}), (0, {}), (8, {})]
     tasks = [("test1", 8, 2)]
     bucket_scheduler(buckets, tasks)
+
 
 def test_bucket_scheduler_dev():
     buckets = [(8, {}), (0, {}), (8, {})]
     tasks = [("test1", 4, 2), ("test2", 4, 3)]
     buckets = bucket_scheduler(buckets, tasks)
     print(grow_buckets(buckets, tasks))
+
 
 # (buckets, [(hours, due date), ...])
 @given(lists(integers()), lists(tuples(integers(), integers())))
@@ -57,6 +59,7 @@ def test_bucket_scheduler(buckets, tasks_):
         if hours_remaining > 0:
             task_buckets[name] = hours_remaining
     assert grown_buckets == task_buckets
+
 
 test_bucket_scheduler_dev()
 test_bucket_scheduler()
