@@ -12,9 +12,9 @@ def get_task_dict(buckets, tasks):
     task_set = set(task[0] for task in tasks)
     d = {}
     for _, future_d in buckets:
-        for name, hours in future_d.iteritems():
+        for name, hours in future_d.items():
             if name in task_set:
-                #an assignment, not a fixed task
+                # an assignment, not a fixed task
                 d[name] = hours
     return d
 
@@ -23,7 +23,7 @@ def get_non_max_set(d):
         return d
     m = max(d.values())
     non_max = set()
-    for k, v in d.iteritems():
+    for k, v in d.items():
         if v != m:
             non_max.add(k)
     return non_max
@@ -53,7 +53,7 @@ def get_inc_set(non_max_set, unfinished_tasks):
     assert len(inc_set) > 0
     return inc_set
 
-#for maximizing a given day
+# for maximizing a given day
 def grow_buckets(buckets, tasks):
     start = time.time()
     tasks_sorted = sort_tasks(tasks)
@@ -66,7 +66,7 @@ def grow_buckets(buckets, tasks):
             break
         i, hours_available, d = bucket_to_update
 
-        #this is inefficient... n^2
+        # this is inefficient... n^2
         unfinished_task_dict = get_task_dict(buckets[i+1:], tasks)
 
         if len(unfinished_task_dict) == 0:
@@ -89,7 +89,7 @@ def grow_buckets(buckets, tasks):
             d[to_update] = hours_to_add
         
         buckets[i] = (hours_available-hours_to_add, d)
-        for j in xrange(len(buckets)-1, -1, -1):
+        for j in range(len(buckets)-1, -1, -1):
             (hours_available_take, d_take) = buckets[j]
             if to_update in d_take:
                 if d_take[to_update] == hours_to_add:

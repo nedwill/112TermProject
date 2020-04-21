@@ -8,13 +8,14 @@ from tabulate import tabulate
 try:
 	MAX_HOURS = int(sys.argv[1])
 except IndexError:
-	print "[*] No max hours provided: assuming 8."
+	print("[*] No max hours provided: assuming 8.")
 	MAX_HOURS = 8
 except ValueError:
-	print "[-] Invalid max hours provided: assuming 8."
+	print("[-] Invalid max hours provided: assuming 8.")
 	MAX_HOURS = 8
 MAXIMIZE_DAYS = False
-WORK_DAYS = None #[0,1,2,3,4] #None #default every day
+# [0,1,2,3,4] #None #default every day
+WORK_DAYS = None
 WORK_TODAY = True
 USER_SPEC_DAYS = {}
 
@@ -28,7 +29,7 @@ try:
 		if offset >= 0:
 			USER_SPEC_DAYS[offset] = int(hours)
 except IOError:
-	print "[*] User specified days not provided."
+	print("[*] User specified days not provided.")
 
 mgr = TaskManager()
 
@@ -87,22 +88,22 @@ for task in tasks_input:
 		try:
 			due_dt = datetime.date(*map(int, due.split('-')))
 		except ValueError:
-			print "[-] Invalid due date in line `{}`!".format(task)
+			print("[-] Invalid due date in line `{}`!".format(task))
 			exit()
 		if "fixed " == desc[:len("fixed ")]:
 			new_task = FixedTask(desc, int(hours), due_dt) #fake the starttime and endtime
 		else:
 			if due_dt <= datetime.date.today():
-				print "[!] Task `{}` due on or before today.".format(desc)
+				print("[!] Task `{}` due on or before today.".format(desc))
 				continue
 			new_task = Task(desc, int(hours), due_dt)
 	try:
 		mgr.add(new_task)
 	except TaskAlreadyExists:
-		print "found duplicate task {}".format(desc)
+		print("found duplicate task {}".format(desc))
 		exit()
 
-print "[+] {} tasks processed. Attempting to generate schedule.".format(mgr.num_tasks())
+print("[+] {} tasks processed. Attempting to generate schedule.".format(mgr.num_tasks()))
 
 prompted = False
 while MAX_HOURS < 24:
@@ -113,20 +114,20 @@ while MAX_HOURS < 24:
 	except NotEnoughTime:
 		#it's a little spamming to print this every time. do it better later
 		if not prompted:	
-			print "[!] Not enough time available to finish your work in {} hours, increasing as necessary.".format(MAX_HOURS)
+			print("[!] Not enough time available to finish your work in {} hours, increasing as necessary.".format(MAX_HOURS))
 			prompted = True
 		MAX_HOURS += 1
 
 if MAX_HOURS >= 24:
-	print "[-] Not enough time available in 24 hours a day to finish your work. :("
+	print("[-] Not enough time available in 24 hours a day to finish your work. :(")
 	exit()
 
-print "[+] Schedule successfully generated with max {} hours per day.".format(MAX_HOURS)
+print("[+] Schedule successfully generated with max {} hours per day.".format(MAX_HOURS))
 for i, plan in enumerate(agenda[:7]):
 	if len(plan) > 0:
 		day = index_to_date(i)
 		hours_total = sum(x[1] for x in plan)
-		print ""
-		print "{}, {} (work {} hours total):".format(week_index_to_day(day.weekday()), day, hours_total)
+		print("")
+		print("{}, {} (work {} hours total):".format(week_index_to_day(day.weekday()), day, hours_total))
 		final = [[task.description, "{}/{}".format(hours, task.hours), task.due.strftime("%m-%d")] for (task, hours) in plan]
-		print tabulate(final, headers=["Task", "Hours", "Due"])
+		print(tabulate(final, headers=["Task", "Hours", "Due"]))

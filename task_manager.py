@@ -19,10 +19,11 @@ class TaskManager(object):
         if task.due > self.latest_task: #due date > lastestTask
             self.latest_task = task.due
 
-    #now removing goes by the exact string
-    #we should have a function that does fuzzy matching
+    # now removing goes by the exact string
+    # we should have a function that does fuzzy matching
     def remove(self, description):
-        description = unicode(description) #super pernicious bug found with stateful testing
+        # super pernicious bug found with stateful testing
+        description = unicode(description)
         if description in self.fixed:
             ret = self.fixed[description]
             del self.fixed[description]
@@ -131,13 +132,15 @@ class TaskManager(object):
         if user_specified_days is None:
             user_specified_days = {}
         max_days_needed = (self.latest_task - datetime.date.today()).days+1
-        #plan_tasks should consist of tuples but they don't support assignment
-        #those lists are mutable tuples... maybe that should be fixed for cleanliness
+        # plan_tasks should consist of tuples but they don't support assignment
+        # those lists are mutable tuples... maybe that should be fixed for cleanliness
+        # initialize with number of needed days
         plan_tasks = [self.init_bucket(day, max_hours,
-            work_days, user_specified_days) for day in xrange(max_days_needed)] #initialize with number of needed days
+            work_days, user_specified_days) for day in range(max_days_needed)]
         plan_tasks = self._calc_agenda_fixed(plan_tasks)
         plan_tasks = self._calc_agenda_assignments(self.assignments.values(), work_today, max_days, plan_tasks)
-        plan_tasks = self._format_for_app(plan_tasks) #change format of output data
+        # change format of output data
+        plan_tasks = self._format_for_app(plan_tasks)
         return plan_tasks
 
     def num_tasks(self):

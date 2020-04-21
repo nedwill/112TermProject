@@ -21,4 +21,4 @@ def test_all():
 	for call in calls:
 		test(*call)
 
-print timeit(stmt='test_all', setup='from __main__ import test_all', number=10000000)
+print(timeit(stmt='test_all', setup='from __main__ import test_all', number=10000000))
