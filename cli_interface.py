@@ -80,7 +80,7 @@ def make_recurring(recurring):
 # we don't handle fixed tasks yet, need a nice way to do this
 for task in tasks_input:
     task = task.strip()
-    if task == "" or task[0] == "#":  # comments!
+    if task == "" or task.startswith("#"):  # comments!
         continue
     if "recurring " == task[: len("recurring ")]:
         desc, recurring, due, hours = task.split(";")

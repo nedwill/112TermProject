@@ -51,3 +51,17 @@ class FixedTask(Task):
     # def __repr__(self):
     #    return "{}, Hours Left: {}, Days Left: {}".format(self.description,
     #        self.hours - self.hours_done, (self.due - datetime.date.today()).days)
+
+class BackgroundTask(Task):
+    # TODO(nedwill): support tasks that we think about in the background
+    pass
+
+
+class RecurringMultiHour(Task):
+    # TODO(nedwill): recurring tasks that can be worked on freely over some
+    # time period i.e. laundry or other chores that must be done regularly
+    # but not at a fixed time
+
+
+class UnstructuredTime(Task):
+    # TODO(nedwill): support scheduled unstructured time
